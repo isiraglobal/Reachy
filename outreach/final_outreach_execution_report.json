@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-21T08:08:22.462950+00:00",
+  "timestamp": "2026-10-21T08:15:31.518925+00:00",
   "total_leads_in_repo": 1000,
   "infrastructure_capacity": {
     "monthly_target": 100000,
@@ -103,18 +103,18 @@
   "copy_package": {
     "version": 1,
     "subject_rule": "2 to 3 lowercase words, looks internal",
-    "subject_template": "quick question",
+    "subject_template": "audit for {{company}}",
     "body_template": "Hi {{name}},\n\nNoticed your practice in {{city}} has over {{reviews}} patient reviews with a {{rating}}\u2605 rating. We already put together a tailored 3-point patient acquisition audit showing exactly where local patients in {{city}} are falling through to competitors.\n\nWe did the audit upfront\u2014no charge and zero strings attached.\n\nCan I drop the 2-minute video overview here?",
     "offer_philosophy": "Do the work first, take the risk off them",
     "personalization_rule": "At least 1 real detail (reviews + city) tied straight to purchase",
-    "created_at": "2026-10-21T08:08:22.413569+00:00"
+    "created_at": "2026-10-21T08:15:31.475693+00:00"
   },
   "sample_rendered_email": {
     "target_lead": "Blunn Creek Family Dentistry",
-    "rendered_subject": "quick question",
+    "rendered_subject": "audit for blunn creek family dentistry",
     "rendered_body": "Hi Blunn Creek Family Dentistry,\n\nNoticed your practice in your area has over 182 patient reviews with a 4.9\u2605 rating. We already put together a tailored 3-point patient acquisition audit showing exactly where local patients in your area are falling through to competitors.\n\nWe did the audit upfront\u2014no charge and zero strings attached.\n\nCan I drop the 2-minute video overview here?",
     "rule_compliance": {
-      "subject_is_2_to_3_lowercase_words": true,
+      "subject_is_2_to_3_lowercase_words": false,
       "offer_does_work_first": true,
       "detail_tied_to_business": "182 reviews + 4.9\u2605 in your area"
     }

@@ -406,12 +406,21 @@ def execute_cold_email_system():
         border_style="green"
     ))
 
-    # Load 1,000 real leads
-    leads_file = "leads_1000.json"
-    if os.path.exists(leads_file):
-        with open(leads_file) as f:
-            leads = json.load(f)
-    else:
+    # Load 1,000 real leads (support both relative and folder execution)
+    possible_paths = [
+        "leads_1000.json",
+        "../leads/leads_1000.json",
+        os.path.join(os.path.dirname(__file__), "..", "leads", "leads_1000.json"),
+        os.path.join(os.path.dirname(__file__), "leads_1000.json")
+    ]
+    leads = []
+    for lp in possible_paths:
+        if os.path.exists(lp):
+            with open(lp, "r", encoding="utf-8") as f:
+                leads = json.load(f)
+            break
+
+    if not leads:
         leads = [{"title": "Sample Clinic", "email": "info@sample.com", "address": "Austin TX"}]
 
     # 1. Volume & Capacity
@@ -523,7 +532,8 @@ def execute_cold_email_system():
         "results_projection": sim
     }
 
-    report_path = "final_outreach_execution_report.json"
+    report_dir = os.path.dirname(os.path.abspath(__file__))
+    report_path = os.path.join(report_dir, "final_outreach_execution_report.json")
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(final_report, f, indent=2)
 

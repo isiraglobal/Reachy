@@ -1,0 +1,76 @@
+[
+  {
+    "title": "Lakeway Cosmetic Dentistry",
+    "category": "Cosmetic dentist",
+    "rating": 4.9,
+    "reviews_count": 166,
+    "phone": "(512) 402-9399",
+    "website": "https://lakewaycosmeticdentistry.com/contact-us/",
+    "email": null,
+    "address": "401 Ranch Road 620 South",
+    "url": "https://www.google.com/maps/place/Lakeway+Cosmetic+Dentistry/data=!4m7!3m6!1s0x865b375bf4fbf50f:0x3a68da5d7776b43d!8m2!3d30.360953!4d-97.952627!16s%2Fg%2F1tdkh1rd!19sChIJD_X79Fs3W4YRPbR2d13aaDo?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+    "social_profiles": [],
+    "extra_details": {}
+  },
+  {
+    "title": "Dentist At Plum Creek Kyle",
+    "category": "Dentist",
+    "rating": 4.9,
+    "reviews_count": 769,
+    "phone": "(512) 764-5421",
+    "website": "https://www.dentistatplumcreek.com/",
+    "email": null,
+    "address": "400 Wetzel",
+    "url": "https://www.google.com/maps/place/Dentist+At+Plum+Creek+Kyle/data=!4m7!3m6!1s0x865b57b0d0fa4c4d:0x40b2f208092cb3bd!8m2!3d30.011094!4d-97.889875!16s%2Fg%2F11v9_p_bv7!19sChIJTUz60LBXW4YRvbMsCQjyskA?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+    "social_profiles": [
+      "https://www.facebook.com/DentistAtPlumcreek"
+    ],
+    "extra_details": {}
+  },
+  {
+    "title": "Austin Orthodontic Arts",
+    "category": "Orthodontist",
+    "rating": 5,
+    "reviews_count": 706,
+    "phone": "+1 512-458-4103",
+    "website": "https://www.austinorthodonticarts.com/?utm_source=google.com&utm_medium=business+profile&utm_campaign=",
+    "email": "info@aoarts.com",
+    "address": "5718 Balcones Dr",
+    "url": "https://www.google.com/maps/place/Austin+Orthodontic+Arts/data=!4m7!3m6!1s0x8644cae40af3dd45:0x2f0752c845112f0d!8m2!3d30.3380399!4d-97.7570893!16s%2Fg%2F1th0bv8r!19sChIJRd3zCuTKRIYRDS8RRchSBy8?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+    "social_profiles": [
+      "https://www.instagram.com/austinorthodonticarts/",
+      "https://www.facebook.com/AustinOrthodonticArts/"
+    ],
+    "extra_details": {}
+  },
+  {
+    "title": "Pure Smiles Orthodontics",
+    "category": "Orthodontist",
+    "rating": 4.9,
+    "reviews_count": 309,
+    "phone": "+1 512-215-2520",
+    "website": "https://puresmilesortho.com/",
+    "email": null,
+    "address": "4301 W William Cannon Dr Ste E-300",
+    "url": "https://www.google.com/maps/place/Pure+Smiles+Orthodontics/data=!4m7!3m6!1s0x865b4b9766b63abb:0xf42109f4b0982c45!8m2!3d30.2203619!4d-97.8391381!16s%2Fg%2F1tdjrkkr!19sChIJuzq2ZpdLW4YRRSyYsPQJIfQ?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+    "social_profiles": [],
+    "extra_details": {}
+  },
+  {
+    "title": "Orthodontics in Austin, Dr. David Ensley",
+    "category": "Orthodontist",
+    "rating": 5,
+    "reviews_count": 174,
+    "phone": "+1 512-521-7000",
+    "website": "https://celebratedental.com/austin-orthodontics/",
+    "email": null,
+    "address": "111 W William Cannon Dr Ste 200",
+    "url": "https://www.google.com/maps/place/Orthodontics+in+Austin,+Dr.+David+Ensley/data=!4m7!3m6!1s0x865cf5b1b29d336d:0x3efc2c6954455a69!8m2!3d30.1922302!4d-97.7798965!16s%2Fg%2F11k3_jttt2!19sChIJbTOdsrH1XIYRaVpFVGks_D4?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+    "social_profiles": [
+      "https://twitter.com/CelebrateDent",
+      "https://www.facebook.com/CelebrateDentalBraces",
+      "https://www.instagram.com/celebratedentallv/"
+    ],
+    "extra_details": {}
+  }
+]

@@ -1,0 +1,169 @@
+{
+  "total_gathered": 1000,
+  "sample_verified": 20,
+  "passed": 20,
+  "failed": 0,
+  "error_rate_pct": 0.0,
+  "results": [
+    {
+      "title": "Japantown Dental: Alex Mendoza, D.D.S.",
+      "url": "https://www.google.com/maps/place/Japantown+Dental:+Alex+Mendoza,+D.D.S./data=!4m7!3m6!1s0x808fcc83ba03f413:0x32c430de9d5e83f3!8m2!3d37.349727!4d-121.898185!16s%2Fg%2F1tfm6x99!19sChIJE_QDuoPMj4AR84Nend4wxDI?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.760984",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Elite Dental - Mohan Raj Jaganathan DDS & Veena Raja DDS PhD",
+      "url": "https://www.google.com/maps/place/Elite+Dental+-+Mohan+Raj+Jaganathan+DDS+%26+Veena+Raja+DDS+PhD/data=!4m7!3m6!1s0x865c5e114932be9f:0x280e99ee5739231d!8m2!3d29.496729!4d-98.556527!16s%2Fg%2F1262xvpmh!19sChIJn74ySRFeXIYRHSM5V-6ZDig?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.873576",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Anaheim Bristol Dental Group",
+      "url": "https://www.bristoldentalgroup.com/anaheim/",
+      "status_code": 200,
+      "duration": "3.349677",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Mandarin Dental Care",
+      "url": "https://www.google.com/maps/place/Mandarin+Dental+Care/data=!4m7!3m6!1s0x88e5cec483cda8b7:0x2c6fe4cac5887eb8!8m2!3d30.1514099!4d-81.6330938!16s%2Fg%2F1thxx0t0!19sChIJt6jNg8TO5YgRuH6Ixcrkbyw?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.955364",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Brightly Dental Midtown",
+      "url": "https://www.google.com/maps/place/Brightly+Dental+Midtown/data=!4m7!3m6!1s0x89c258fc36fc3f85:0xe6e60dd5611d29f0!8m2!3d40.7569869!4d-73.975942!16s%2Fg%2F11b7q7zcyr!19sChIJhT_8NvxYwokR8CkdYdUN5uY?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.960586",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "All Smiles Family Dentistry & Orthodontics - Dental Emergency",
+      "url": "https://www.google.com/maps/place/All+Smiles+Family+Dentistry+%26+Orthodontics+-+Dental+Emergency/data=!4m7!3m6!1s0x808fca88f94a7217:0xbf23393725b5a348!8m2!3d37.3218381!4d-121.9470443!16s%2Fg%2F11c4b76d7r!19sChIJF3JK-YjKj4ARSKO1JTc5I78?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.936098",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Edgewater Family Dentistry",
+      "url": "https://www.google.com/maps/place/Edgewater+Family+Dentistry/data=!4m7!3m6!1s0x88db3f9aacbaf077:0x97284049c1311ba8!8m2!3d26.5870508!4d-81.9423696!16s%2Fg%2F11b6d_wf0h!19sChIJd_C6rJo_24gRqBsxwUlAKJc?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.893286",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Perfect Smile Dental of Sacramento",
+      "url": "https://www.google.com/maps/place/Perfect+Smile+Dental+of+Sacramento/data=!4m7!3m6!1s0x809ac66b341c7429:0x174c41a17320b10c!8m2!3d38.4390345!4d-121.4223219!16s%2Fg%2F1tjhxxpn!19sChIJKXQcNGvGmoARDLEgc6FBTBc?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.862969",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Smile L.A. Downtown Modern Dentistry",
+      "url": "https://www.google.com/maps/place/Smile+L.A.+Downtown+Modern+Dentistry/data=!4m7!3m6!1s0x80c2b74f2bac1b97:0x918649d01d00d01b!8m2!3d34.048646!4d-118.254826!16s%2Fg%2F1tdqny0z!19sChIJlxusK0-3woARG9AAHdBJhpE?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.949884",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "My Dentist in Miami",
+      "url": "https://www.google.com/maps/place/My+Dentist+in+Miami/data=!4m7!3m6!1s0x88d9b7a50719ebbf:0x72c35ec346333250!8m2!3d25.7613341!4d-80.194206!16s%2Fg%2F11fpms2npc!19sChIJv-sZB6W32YgRUDIzRsNew3I?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.747948",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Secret River Dental",
+      "url": "https://www.google.com/maps/place/Secret+River+Dental/data=!4m7!3m6!1s0x809acf43aec3d651:0x147d798665355785!8m2!3d38.4950792!4d-121.5258598!16s%2Fg%2F11sfpwm6zy!19sChIJUdbDrkPPmoARhVc1ZYZ5fRQ?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.841068",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Round Rock Family Dental",
+      "url": "https://www.google.com/maps/place/Round+Rock+Family+Dental/data=!4m7!3m6!1s0x8644d1e11877e12f:0x4686e11754fa9fe0!8m2!3d30.4902348!4d-97.6799667!16s%2Fg%2F1tgn9_qx!19sChIJL-F3GOHRRIYR4J_6VBfhhkY?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.767182",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Caven Dental Group",
+      "url": "https://www.google.com/maps/place/Caven+Dental+Group/data=!4m7!3m6!1s0x88e5b57e233ea77b:0xd2a209a65cef2849!8m2!3d30.2156152!4d-81.5090221!16s%2Fg%2F1tff3vxl!19sChIJe6c-I3615YgRSSjvXKYJotI?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.818858",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Star Ranch Dental",
+      "url": "https://www.google.com/maps/place/Star+Ranch+Dental/data=!4m7!3m6!1s0x864c23660e5d47f9:0xdc14896b5666a9e3!8m2!3d33.0444665!4d-96.8252235!16s%2Fg%2F1ty74ntd!19sChIJ-UddDmYjTIYR46lmVmuJFNw?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.921782",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Premier Dental",
+      "url": "https://www.google.com/maps/place/Premier+Dental/data=!4m7!3m6!1s0x80945cd9f5bb8823:0xcafd96a0fe27f17a!8m2!3d36.8380158!4d-119.7366926!16s%2Fg%2F1hc56clgm!19sChIJI4i79dlclIARevEn_qCW_co?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.783702",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Arbor Dental - San Jose",
+      "url": "https://www.google.com/maps/place/Arbor+Dental+-+San+Jose/data=!4m7!3m6!1s0x808e2d71615b1c95:0x474dcbd9b4aec172!8m2!3d37.3043912!4d-121.7768422!16s%2Fg%2F1vg_7jfh!19sChIJlRxbYXEtjoARcsGutNnLTUc?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.850023",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "TLC Dental - Fort Lauderdale",
+      "url": "https://www.google.com/maps/place/TLC+Dental+-+Fort+Lauderdale/data=!4m7!3m6!1s0x88d9020e8657c503:0x96f3ecd5b8a465fb!8m2!3d26.1902878!4d-80.1066992!16s%2Fg%2F1thss59f!19sChIJA8VXhg4C2YgR-2WkuNXs85Y?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.714131",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Mills Dental Group",
+      "url": "https://www.google.com/maps/place/Mills+Dental+Group/data=!4m7!3m6!1s0x88e77a94dfde2f57:0xfa96095615989349!8m2!3d28.5626993!4d-81.3646842!16s%2Fg%2F1tdftzfb!19sChIJVy_e35R654gRSZOYFVYJlvo?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.751767",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "Treaty Oak Dental",
+      "url": "https://www.google.com/maps/place/Treaty+Oak+Dental/data=!4m7!3m6!1s0x8644b574f9581045:0xfc91bd7b51f7c622!8m2!3d30.2978463!4d-97.7472476!16s%2Fg%2F1td7j3jb!19sChIJRRBY-XS1RIYRIsb3UXu9kfw?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.784540",
+      "exists": true,
+      "error": null
+    },
+    {
+      "title": "CaliDental Bakersfield Niles",
+      "url": "https://www.google.com/maps/place/CaliDental+Bakersfield+Niles/data=!4m7!3m6!1s0x80ea6dbaa3dd2acf:0xe4085b7e9361f7ff!8m2!3d35.3763564!4d-118.9438262!16s%2Fg%2F11nst1s91g!19sChIJzyrdo7pt6oAR__dhk35bCOQ?authuser=0&hl=en&g_ep=EgoyMDI2MTAxOC4wIJJjKgBIAVAD&rclk=1",
+      "status_code": 200,
+      "duration": "0.753059",
+      "exists": true,
+      "error": null
+    }
+  ]
+}
