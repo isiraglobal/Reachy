@@ -13,7 +13,7 @@
 ### **The Enterprise B2B Lead Finding, Contact Enrichment & Multi-Inbox Cold Outreach Engine**
 *Engineered by **ISIRA Automations** for AI Coding Agents, Sales Engineers, and High-Volume B2B Growth Teams.*
 
-[Features](#-core-features) • [Architecture](#-system-architecture) • [Quickstart](#-quickstart) • [Lead Discovery](#-lead-discovery--enrichment-pipeline) • [Multi-Inbox Outreach](#-multi-inbox-outreach-engine) • [MCP Server](#-model-context-protocol-mcp-integration) • [Autonomous CLI Diagnostics](#-autonomous-cli-agent-diagnostics)
+[Features](#-core-features) • [Architecture](#-system-architecture) • [Quickstart](#-quickstart) • [Agent Guide (AGENTS.md)](file:///Users/lakshitsinghvi/Documents/Repos/Google-maps-leads/AGENTS.md) • [Lead Discovery](#-lead-discovery--enrichment-pipeline) • [Multi-Inbox Outreach](#-multi-inbox-outreach-engine) • [MCP Server](#-model-context-protocol-mcp-integration) • [Autonomous CLI Diagnostics](#-autonomous-cli-agent-diagnostics)
 
 ---
 
