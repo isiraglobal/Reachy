@@ -260,10 +260,31 @@ class GoogleMapsScraper:
 
         Uses direct web enrichment via duckduckgo html search and website DOM parsing.
         """
-        search_query = f"{lead.title} {lead.address or ''}".strip()
-        found_website = lead.website
+        # If website or phone is missing, extract directly from the Google Maps place profile via agent-browser
+        if lead.url and (not lead.website or not lead.phone or not lead.address):
+            try:
+                self._run_cli(["open", lead.url], timeout=20)
+                time.sleep(1.8)
+                details_js = """(() => {
+                    const website = document.querySelector('a[data-item-id=\"authority\"]')?.href || null;
+                    const phone = document.querySelector('button[data-item-id*=\"phone\"]')?.innerText?.trim()?.replace(/^[\\s\\S]*?\\+/, '+') || null;
+                    const address = document.querySelector('button[data-item-id=\"address\"]')?.innerText?.trim()?.replace(/^[\\s\\S]*?\\n/, '') || null;
+                    return { website, phone, address };
+                })()"""
+                details = self._eval_js(details_js)
+                if isinstance(details, dict):
+                    if details.get("website") and not lead.website:
+                        lead.website = details["website"]
+                    if details.get("phone") and not lead.phone:
+                        lead.phone = details["phone"]
+                    if details.get("address") and (not lead.address or lead.address == ""):
+                        lead.address = details["address"]
+            except Exception as e:
+                logger.debug(f"Direct Maps place enrichment error: {e}")
 
-        if not found_website or not lead.phone:
+        # Search engine fallback if website is still missing
+        if not lead.website or not lead.phone:
+            search_query = f"{lead.title} {lead.address or ''}".strip()
             try:
                 web_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote_plus(search_query)}"
                 req = urllib.request.Request(
@@ -288,7 +309,7 @@ class GoogleMapsScraper:
                                 lead.phone = match.group(0)
 
                         # Extract official website if missing
-                        if not found_website and a_el:
+                        if not lead.website and a_el:
                             raw_href = a_el.get("href", "")
                             parsed = urllib.parse.urlparse(raw_href)
                             qs = urllib.parse.parse_qs(parsed.query)
@@ -296,53 +317,77 @@ class GoogleMapsScraper:
                             if candidate_url and candidate_url.startswith("http"):
                                 ignored = ["google", "duckduckgo", "yelp", "yellowpages", "mapquest", "facebook", "instagram"]
                                 if not any(x in candidate_url for x in ignored):
-                                    found_website = candidate_url
+                                    lead.website = candidate_url
             except Exception as e:
                 logger.debug(f"Web search enrichment error for {lead.title}: {e}")
 
-        if found_website:
-            lead.website = found_website
-            # Enrich from target website
+        # Now extract email and phone from official website (both HTTP request and agent-browser fallback)
+        if lead.website and not lead.email:
+            clean_site = lead.website.split("?")[0]
+            site_html = ""
+            
+            # Step A: Fast HTTP fetch
             try:
                 req = urllib.request.Request(
-                    found_website,
+                    clean_site,
                     headers={
                         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
                     }
                 )
-                with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=7) as r:
+                with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=6) as r:
                     site_html = r.read().decode("utf-8", errors="ignore")
-                    soup = bs4.BeautifulSoup(site_html, "html.parser")
+            except Exception:
+                pass
 
-                    # Extract emails
-                    emails = set(re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", site_html))
-                    valid_emails = [
-                        e for e in emails 
-                        if not any(e.lower().endswith(ext) for ext in [".png", ".jpg", ".webp", ".svg", ".js", ".css", ".gif"])
-                    ]
-                    if valid_emails and not lead.email:
-                        lead.email = valid_emails[0]
+            # Step B: If HTTP fails (e.g. Cloudflare / JS rendering), open via agent-browser
+            if not site_html:
+                try:
+                    self._run_cli(["open", clean_site], timeout=20)
+                    time.sleep(2)
+                    browser_data_js = """(() => {
+                        const text = document.body ? document.body.innerText : '';
+                        const mailtos = Array.from(document.querySelectorAll('a[href^=\"mailto:\"]'))
+                            .map(a => a.href.replace(/^mailto:/i, '').split('?')[0].trim());
+                        const emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g) || [];
+                        const tel = document.querySelector('a[href^=\"tel:\"]')?.href?.replace(/^tel:/i, '') || '';
+                        return { emails: Array.from(new Set([...emails, ...mailtos])), text, tel };
+                    })()"""
+                    b_res = self._eval_js(browser_data_js)
+                    if isinstance(b_res, dict):
+                        b_emails = b_res.get("emails", [])
+                        valid_b_emails = [
+                            e for e in b_emails 
+                            if not any(e.lower().endswith(ext) for ext in [".png", ".jpg", ".webp", ".svg", ".js", ".css", ".gif"])
+                            and not any(x in e.lower() for x in ["sentry", "wixpress", "cloudflare", "schema"])
+                        ]
+                        if valid_b_emails:
+                            lead.email = valid_b_emails[0]
+                        if not lead.phone and b_res.get("tel"):
+                            lead.phone = b_res["tel"].strip()
+                except Exception as e:
+                    logger.debug(f"Browser website fetch error: {e}")
 
-                    # Extract social links
-                    social_urls = []
-                    for a in soup.select("a[href]"):
-                        href = a["href"]
-                        if any(s in href for s in ["instagram.com/", "facebook.com/", "linkedin.com/company", "twitter.com/", "x.com/"]):
-                            social_urls.append(href)
-                    if social_urls:
-                        lead.social_profiles = list(set(social_urls))
+            # Parse HTTP html if obtained
+            if site_html:
+                soup = bs4.BeautifulSoup(site_html, "html.parser")
+                emails = set(re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", site_html))
+                valid_emails = [
+                    e for e in emails 
+                    if not any(e.lower().endswith(ext) for ext in [".png", ".jpg", ".webp", ".svg", ".js", ".css", ".gif"])
+                    and not any(x in e.lower() for x in ["sentry", "wixpress", "cloudflare", "schema"])
+                ]
+                if valid_emails and not lead.email:
+                    lead.email = valid_emails[0]
 
-                    # Fallback phone from site
-                    if not lead.phone:
-                        tel_a = soup.select_one("a[href^='tel:']")
-                        if tel_a:
-                            lead.phone = tel_a["href"].replace("tel:", "").strip()
-                        else:
-                            phone_match = re.search(r"(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})", site_html)
-                            if phone_match:
-                                lead.phone = phone_match.group(0)
-            except Exception as e:
-                logger.debug(f"Website enrichment error for {found_website}: {e}")
+                # Fallback phone from site
+                if not lead.phone:
+                    tel_a = soup.select_one("a[href^='tel:']")
+                    if tel_a:
+                        lead.phone = tel_a["href"].replace("tel:", "").strip()
+                    else:
+                        phone_match = re.search(r"(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})", site_html)
+                        if phone_match:
+                            lead.phone = phone_match.group(0)
 
         return lead
 
