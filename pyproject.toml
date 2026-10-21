@@ -3,15 +3,38 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "google-maps-leads"
-version = "0.1.0"
-description = "Autonomous agent tool and scraper for extracting rich business leads from Google Maps"
+name = "reachy"
+version = "1.0.0"
+description = "Autonomous B2B Lead Generation & Multi-Inbox Cold Outreach Engine by ISIRA Automations"
 readme = "README.md"
+authors = [
+    { name = "ISIRA Automations", email = "automations@isira.org" }
+]
+keywords = [
+    "lead-generation",
+    "google-maps-scraper",
+    "cold-email",
+    "email-outreach",
+    "b2b-leads",
+    "enrichment",
+    "cloudflare-decoder",
+    "mcp",
+    "isira-automations"
+]
+license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
+    "beautifulsoup4>=4.12.0",
+    "certifi>=2024.0.0",
     "mcp>=1.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/isiraglobal/Reachy"
+Repository = "https://github.com/isiraglobal/Reachy.git"
+Issues = "https://github.com/isiraglobal/Reachy/issues"
+
 [project.scripts]
-gmaps-leads = "google_maps_leads.cli:main"
-gmaps-leads-mcp = "google_maps_leads.mcp_server:main"
+reachy-leads = "google_maps_leads.cli:main"
+reachy-mcp = "google_maps_leads.mcp_server:main"
+reachy-browser-test = "google_maps_leads.browser_test:main"

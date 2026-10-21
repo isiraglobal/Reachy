@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .agent-screenshots/
 .DS_Store
+*.log
+scratch/

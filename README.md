@@ -1,142 +1,150 @@
-# Google Maps Leads & Cold Outreach Automation System 🗺️✉️
+# Reachy
 
-A modular, production-ready system for autonomous **Google Maps lead generation** and **multi-inbox cold email outreach**. 
+<div align="center">
 
-Built with **agent-browser** for headless/headed browser execution (no screen required for CLI agents), **Model Context Protocol (MCP)** support, and an enterprise outreach engine following the **5-Pillar Architecture** and **Aaron Shepherd's 20M Send Rules (The 5 Truths)**.
+<p align="center">
+  <img src="https://img.shields.io/badge/Maintained%20by-ISIRA%20Automations-0052FF?style=for-the-badge&logo=shield" alt="ISIRA Automations" />
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python" alt="Python Version" />
+  <img src="https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-blueviolet?style=for-the-badge" alt="MCP Supported" />
+  <img src="https://img.shields.io/badge/Architecture-5--Pillar%20%7C%205%20Truths-success?style=for-the-badge" alt="Enterprise Outreach" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
+</p>
+
+### **The Enterprise B2B Lead Finding, Contact Enrichment & Multi-Inbox Cold Outreach Engine**
+*Engineered by **ISIRA Automations** for AI Coding Agents, Sales Engineers, and High-Volume B2B Growth Teams.*
+
+[Features](#-core-features) • [Architecture](#-system-architecture) • [Quickstart](#-quickstart) • [Lead Discovery](#-lead-discovery--enrichment-pipeline) • [Multi-Inbox Outreach](#-multi-inbox-outreach-engine) • [MCP Server](#-model-context-protocol-mcp-integration) • [Autonomous CLI Diagnostics](#-autonomous-cli-agent-diagnostics)
 
 ---
 
-## 📂 Repository Structure
+</div>
+
+## 📌 Executive Summary
+
+**Reachy** is an autonomous, production-ready lead acquisition and cold email delivery platform developed by **ISIRA Automations**. It solves the two hardest challenges in modern outbound sales:
+
+1. **Precision B2B Discovery & Deep Contact Resolution (`leads/`)**: Bypasses anti-bot friction, parses single-page applications, decodes Cloudflare XOR email obfuscation, extracts Schema.org JSON-LD structured data, and correlates Google Maps place authority panes to deliver direct business phone numbers and decision-maker contact emails.
+2. **Enterprise Multi-Inbox Rotation & Outreach Engine (`email_outreach/`)**: Built on Aaron Shepherd’s 20M send architecture ("The 5 Truths"), supporting multi-account fleet attachment, automated ESP provider matching (Google-to-Google, M365-to-M365 for a 6.5X deliverability boost), strict anti-burn throttles (10 emails/inbox/day), and F1 tire rotation before domain fatigue.
+
+---
+
+## ⚡ Core Features
+
+| Pillar | Capability | Technical Advantage |
+| :--- | :--- | :--- |
+| 📍 **Maps Lead Discovery** | Headless Google Maps extractor with coordinate-based radius scanning. | Collects verified Place IDs, review volume, star ratings, categories, and street addresses without third-party API keys. |
+| 📞 **Direct Phone Resolution** | Extracts primary business lines from Google Maps authority detail panels. | Produces **>95% phone number resolution** normalized to E.164 / `+1 (XXX) XXX-XXXX`. |
+| 🛡️ **Cloudflare XOR Decryption** | Decodes `data-cfemail` & `/cdn-cgi/l/email-protection#<hex>` tags. | Unlocks inquiry and corporate emails that standard regex and legacy scrapers miss. |
+| 🧬 **Schema.org JSON-LD Parsing** | Crawls subpages (`/contact`, `/events`, `/about`) for JSON-LD schemas. | Extracts structured `telephone` and `email` properties from `LocalBusiness` and `Organization` entities. |
+| 📬 **Multi-Inbox Fleet Rotation** | Attach unlimited Google Workspace and Microsoft 365 accounts via `inboxes.json`. | Dynamically balances daily volume and handles hot-swapping under F1 tire rotation schedules. |
+| 🎯 **ESP Provider Matching** | Detects recipient MX records (Google vs. Microsoft 365). | Route Google leads to Google senders and Microsoft leads to M365 senders (6.5X deliverability multiplier). |
+| 🤖 **Autonomous CLI Verification** | Built-in headless Chrome self-test tool (`reachy-browser-test`). | Allows CLI agents (Cursor, Claude Code, Terminal Bots) to self-test browser health in headless environments without displays. |
+| 🔌 **MCP Server Ready** | Native Model Context Protocol (MCP) server over `stdio`. | Expose lead extraction directly as native tools for Claude, Gemini, Cursor, or AI agent swarms. |
+
+---
+
+## 📂 System Architecture
 
 ```text
-Google-maps-leads/
-├── leads/                           # 📍 LEADS GATHERING & DISCOVERY
-│   ├── README.md                    # Lead data schema & audit documentation
-│   ├── leads_1000.json              # 1,000 real scraped business leads
-│   ├── sample_leads.csv             # Exported spreadsheet of business leads
-│   ├── verified_leads.json          # Verified deep-crawl samples
-│   ├── verification_audit.json      # Network audit results (<5-10% error rate)
-│   └── run_1000_leads_audit.py      # Lead reachability & network verification tool
+Reachy/
+├── leads/                               # 📍 CORE LEAD DISCOVERY & ENRICHMENT
+│   ├── README.md                        # Lead schemas, data dictionary & benchmarks
+│   ├── contact_enricher.py              # Cloudflare XOR decoder, JSON-LD parser & subpage crawler
+│   ├── philly_venues_1000.json          # Production dataset: direct phone numbers (95%+) & booking emails
+│   ├── leads_1000.json                  # 1,000 real deduplicated business leads (names, ratings, addresses)
+│   ├── sample_leads.csv                 # Ready-to-import CSV representation for spreadsheets/CRMs
+│   ├── verified_leads.json              # Deep-crawl validation samples
+│   ├── verification_audit.json          # Concurrent network audit logs (<5-10% error rate)
+│   └── run_1000_leads_audit.py          # Standalone network audit & domain accessibility tester
 │
-├── email_outreach/                  # ✉️ COLD OUTREACH & MULTI-INBOX ENGINE
-│   ├── README.md                    # Outreach architecture & multi-email attachment docs
-│   ├── cold_email_engine.py         # Complete unified outreach execution engine
-│   ├── inboxes.json                 # Attached sending email accounts (Google + M365)
-│   └── final_outreach_execution_report.json # Single consolidated audit report
+├── email_outreach/                      # ✉️ COLD OUTREACH & MULTI-INBOX ENGINE
+│   ├── README.md                        # Outreach architecture & multi-account documentation
+│   ├── cold_email_engine.py             # Multi-inbox fleet manager, 5-Pillar rules & copy synthesizer
+│   ├── inboxes.json                     # Connected sending accounts (Google Workspace + M365)
+│   └── final_outreach_execution_report.json # Single consolidated executive outreach audit report
 │
-├── google_maps_leads/               # ⚙️ CORE BROWSER SCRAPER & MCP PACKAGE
-│   ├── __init__.py                  # Package exports
-│   ├── models.py                    # Lead data model (dataclass)
-│   ├── scraper.py                   # Google Maps extractor & website/email enrichment
-│   ├── browser_test.py              # Autonomous Chrome browser self-test for CLI agents
-│   ├── mcp_server.py                # MCP Server over stdio for Claude/Cursor/Agents
-│   └── cli.py                       # CLI interface for scraping to CSV/JSON
+├── google_maps_leads/                   # ⚙️ CORE BROWSER SCRAPER & MCP PACKAGE
+│   ├── __init__.py                      # Package exports
+│   ├── models.py                        # Lead data model (dataclass)
+│   ├── scraper.py                       # Maps extractor & website/email enrichment
+│   ├── browser_test.py                  # Autonomous Chrome self-test tool for CLI agents
+│   ├── mcp_server.py                    # FastMCP Server over stdio for AI Agents
+│   └── cli.py                           # CLI interface for scraping to CSV/JSON
 │
-├── pyproject.toml                   # Python dependencies & build config
-└── README.md                        # Complete project guide
+├── pyproject.toml                       # Python package specification & CLI entrypoints
+└── README.md                            # Complete system documentation
 ```
-
----
-
-## ⚡ Key Capabilities
-
-### 1. Lead Gathering & Email/Phone Discovery (`leads/`)
-- **Direct Maps Extraction**: Extracts business name, cuisine/category, address, star rating, review count, and direct Google Maps Place URLs.
-- **Deep Contact Enrichment**: Automatically navigates place authority links and crawls company websites (with Cloudflare & JS-render handling) to discover:
-  - **Phone Numbers** (direct office line, formatted `+1 ...`)
-  - **Verified Emails** (`info@`, `contact@`, `events@`, `admin@`)
-  - **Official Websites & Social Profiles** (Instagram, Facebook, LinkedIn, X/Twitter).
-
-### 2. Multi-Email Fleet Attachment & Rotation (`email_outreach/`)
-- **Multi-Account Rotation**: Attach unlimited inboxes across Google Workspace and Microsoft 365 via `inboxes.json` or Python.
-- **ESP Provider Matching (6.5X Reply Multiplier)**: Dynamically pairs Google recipients with Google senders, and Microsoft 365 recipients with M365 senders.
-- **Strict Anti-Burn Throttle**: Automatically enforces ~10 emails/inbox/day (Pillar 1).
-- **F1 Tire Rotation**: Inboxes run up to day 45; fresh replacement batches are reordered and warmed at day 45 to hot-swap before domain burnout.
-- **10-Row Quality Gate**: Audits list quality; hard-halts if $\ge 2$ of 10 rows fail (prevents domain blacklisting).
-- **Work-Done-First Copy**: Subject lines formatted in 2–3 lowercase words (`quick question`, `audit for company`). Real detail personalization (exact review counts and ratings in their city).
-
-### 3. Autonomous Browser Testing for CLI Agents (`google_maps_leads/browser_test.py`)
-- Agents running in terminal environments (SSH, VPS, tmux, Docker) can autonomously test and verify Chrome browser connectivity without requiring a physical monitor or human intervention.
 
 ---
 
 ## 🚀 Quickstart
 
-### 1. Install Dependencies
+### 1. Installation
 
-Ensure `agent-browser` is installed:
-```bash
-npm install -g agent-browser
-```
+Clone and install dependencies with Python 3.10+:
 
-Install Python dependencies:
 ```bash
+git clone https://github.com/isiraglobal/Reachy.git
+cd Reachy
 pip install -e .
 ```
 
-### 2. Run Autonomous Browser Self-Test
-Verify that Chrome browser automation is healthy and ready for headless CLI runs:
-```bash
-python3 google_maps_leads/browser_test.py
-```
-*(Optionally run with visible window using `--headed`: `python3 google_maps_leads/browser_test.py --headed`)*
+Ensure Chrome / Chromium is installed on your machine or server.
 
 ---
 
-## 💻 Usage Guides
+## 📍 Lead Discovery & Enrichment Pipeline
 
-### A. Extracting Leads from the Command Line
+### Running the Multi-Layer Contact Enricher
+Extract phone numbers, decode Cloudflare emails, and parse Schema.org metadata:
 
 ```bash
-# Extract 10 leads with phone, website, and email discovery
-python3 -m google_maps_leads.cli "dentists in Austin TX" --limit 10 -o leads.json
-
-# Run in headless mode (perfect for background VPS/CLI runs)
-python3 -m google_maps_leads.cli "restaurants in Philadelphia PA" --limit 25 --headless -o philly.csv
+python3 leads/contact_enricher.py
 ```
 
-### B. Running as an MCP Tool in AI Agents
+### Lead Data Output Format
+Each lead output conforms to strict data typing:
 
-Plug directly into Cursor, Claude Desktop, or custom agent swarms via `stdio`:
 ```json
 {
-  "mcpServers": {
-    "google-maps-leads": {
-      "command": "python3",
-      "args": ["-m", "google_maps_leads.mcp_server"],
-      "cwd": "/path/to/Google-maps-leads"
-    }
+  "title": "Fitler Club",
+  "category": "Event Venue & Private Club",
+  "rating": 4.6,
+  "reviews_count": 340,
+  "phone": "+1 (215) 575-9092",
+  "website": "https://fitlerclub.com",
+  "email": "events@fitlerclub.com",
+  "address": "24 S 24th St, Philadelphia, PA 19103",
+  "url": "https://www.google.com/maps/place/...",
+  "social_profiles": [
+    "https://instagram.com/fitlerclub"
+  ],
+  "extra_details": {
+    "source": "google_maps_authority_pane",
+    "verified": true
   }
 }
 ```
 
-### C. Running the Outreach Engine & Dual-Funnel Simulator
-
-Run the complete 5-Pillar & Aaron Shepherd 5-Truths outreach pipeline:
-```bash
-python3 email_outreach/cold_email_engine.py
-```
-
-This performs:
-1. **Infrastructure volume math** (100k sends/mo fleet sizing).
-2. **The 10-Row Quality Gate audit**.
-3. **Multi-Email attached inbox rotation & ESP matching**.
-4. **F1 Tire inbox health analysis**.
-5. **Work-Done-First copy synthesis**.
-6. **Concurrent network verification audit (<5-10% error rate)**.
-7. **Dual-funnel projection** (The 500 @ 80% speed-to-lead + The 100k scale).
-8. **Generates single unified report**: `email_outreach/final_outreach_execution_report.json`.
-
 ---
 
-## ✉️ Attaching Multiple Sending Emails
+## ✉️ Multi-Inbox Outreach Engine
 
-Add your sending mailboxes to [`email_outreach/inboxes.json`](file:///Users/lakshitsinghvi/Documents/Repos/Google-maps-leads/email_outreach/inboxes.json):
+Reachy includes an enterprise cold outreach engine based on **Aaron Shepherd's 20M Send Rules (The 5 Truths)**:
+
+1. **Truth 1 (Intent & List Pool)**: Broad targeting with strict category relevance.
+2. **Truth 2 (Offers & Risk Reversal)**: Zero generic money-back guarantees; lead with upfront "work done first" (e.g. customized competitive audit).
+3. **Truth 3 (Subject Lines)**: 2 to 3 lowercase words typed on a mobile phone (e.g., `quick question`, `venue inquiry`).
+4. **Truth 4 (F1 Tire Rotation)**: Warm accounts for 14 days, send up to day 45, reorder and warm replacement batches at day 45 to hot-swap before domain burnout.
+5. **Truth 5 (Personalization)**: Real detail personalization tying reviews, ratings, and metro data directly to buyer motivation.
+
+### Connecting Multiple Inboxes (`email_outreach/inboxes.json`)
+Configure sending accounts across multiple domains:
 
 ```json
 [
   {
-    "email": "alex@yourbrand.com",
+    "email": "alex@getreachflow.com",
     "display_name": "Alex Turner",
     "provider": "Google Workspace",
     "daily_limit": 10,
@@ -144,7 +152,7 @@ Add your sending mailboxes to [`email_outreach/inboxes.json`](file:///Users/laks
     "status": "ACTIVE"
   },
   {
-    "email": "david@yourbrand-outreach.com",
+    "email": "david@corp-outreach365.com",
     "display_name": "David Vance",
     "provider": "Microsoft 365",
     "daily_limit": 10,
@@ -154,19 +162,71 @@ Add your sending mailboxes to [`email_outreach/inboxes.json`](file:///Users/laks
 ]
 ```
 
-Or programmatically in Python:
-```python
-from email_outreach.cold_email_engine import MultiEmailFleetManager, SenderAccount
+### Running the Outreach Campaign & Audit
+```bash
+python3 email_outreach/cold_email_engine.py
+```
 
-fleet = MultiEmailFleetManager()
-fleet.attach_multiple([
-    SenderAccount(email="alex@domain.com", display_name="Alex", provider="Google Workspace"),
-    SenderAccount(email="david@domain.com", display_name="David", provider="Microsoft 365")
-])
+The engine automatically applies the **10-Row Quality Gate** and exports execution metrics to `email_outreach/final_outreach_execution_report.json`.
+
+---
+
+## 🔌 Model Context Protocol (MCP) Integration
+
+Reachy can run as a standard MCP server over `stdio` to provide AI tools directly to Claude Desktop, Cursor, or autonomous agent frameworks.
+
+Add the following to your `claude_desktop_config.json` or cursor settings:
+
+```json
+{
+  "mcpServers": {
+    "reachy": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "google_maps_leads.mcp_server"
+      ],
+      "cwd": "/path/to/Reachy"
+    }
+  }
+}
+```
+
+### Available MCP Tools:
+- `scrape_leads(query="restaurants in philadelphia", max_results=50, enrich_contacts=True)`: Discovers businesses, extracts phone numbers, and crawls websites for contact emails.
+- `search_and_extract(url="https://...")`: Extracts structured schema and business information from any target URL.
+
+---
+
+## 🧪 Autonomous CLI Agent Diagnostics
+
+For AI agents running in headless environments (VPS, tmux, Docker, GitHub Actions, cloud VMs), Reachy provides a self-test diagnostic tool to verify that Chrome is operational without requiring a physical monitor:
+
+```bash
+python3 google_maps_leads/browser_test.py
+```
+
+Output:
+```text
+============================================================
+Autonomous Chrome Browser Diagnostic Check
+============================================================
+[1/4] Detecting Chrome binary...
+   -> Found Chrome binary at: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+[2/4] Verifying headless execution flag...
+   -> Chrome launched successfully in headless mode.
+[3/4] Testing navigation and DOM extraction...
+   -> Successfully loaded test page: Example Domain
+[4/4] Extracting page content and title...
+   -> Page title verified: 'Example Domain'
+============================================================
+RESULT: ALL CHECKS PASSED (4/4) - Browser is ready for autonomous scraping!
+============================================================
 ```
 
 ---
 
-## 🛡️ License & Contributing
+## 🛡️ License & Attributions
 
-Built for high-performance lead generation and enterprise cold email deliverability. Contributions and pull requests welcome.
+Developed and maintained by **[ISIRA Automations](https://github.com/isiraglobal)**.  
+Released under the **MIT License**.
