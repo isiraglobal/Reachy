@@ -198,12 +198,33 @@ Add the following to your `claude_desktop_config.json` or cursor settings:
 
 ---
 
-## 🧪 Autonomous CLI Agent Diagnostics
+## 🧪 Autonomous Browser Download, Testing & Errand Runner
 
-For AI agents running in headless environments (VPS, tmux, Docker, GitHub Actions, cloud VMs), Reachy provides a self-test diagnostic tool to verify that Chrome is operational without requiring a physical monitor:
+For AI agents running in headless environments (VPS, tmux, Docker, GitHub Actions, cloud VMs), Reachy provides complete browser auto-downloading, self-test diagnostics, and autonomous web errand execution without requiring a physical monitor or human user:
 
+### 1. Download & Install Browser Binaries
+```bash
+reachy-browser-install --install
+```
+
+### 2. Autonomous Browser Self-Diagnostics
 ```bash
 python3 google_maps_leads/browser_test.py
+# or via CLI:
+reachy-browser-test
+```
+
+### 3. Run Autonomous Web Errands
+Dispatch your agent to inspect target pages, fetch DOM states, or capture screenshots:
+```bash
+# Evaluate DOM state:
+reachy-browser-install --url "https://www.google.com/maps" --task eval
+
+# Capture interactive accessibility snapshot:
+reachy-browser-install --url "https://example.com" --task snapshot
+
+# Capture full-page screenshot:
+reachy-browser-install --url "https://example.com" --task screenshot
 ```
 
 Output:

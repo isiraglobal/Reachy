@@ -38,3 +38,5 @@ Issues = "https://github.com/isiraglobal/Reachy/issues"
 reachy-leads = "google_maps_leads.cli:main"
 reachy-mcp = "google_maps_leads.mcp_server:main"
 reachy-browser-test = "google_maps_leads.browser_test:main"
+reachy-browser-install = "google_maps_leads.browser_installer:main"
+

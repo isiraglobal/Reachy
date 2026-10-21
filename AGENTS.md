@@ -53,15 +53,37 @@ reachy-mcp --help
 
 ---
 
-## 🧪 Step 2: Headless Browser Self-Diagnostic
+## 🧪 Step 2: Headless Browser Download, Setup & Autonomous Errands
 
-Before running any scraping or lead discovery task, execute the autonomous browser diagnostic tool. This verifies that Google Chrome / Chromium is installed, can run without a physical display (`--headless=new`), and can inspect the DOM:
+For autonomous agents operating in cloud environments, VPS, or containers without an existing browser, Reachy provides automatic browser binary downloading, environment verification, and autonomous web errand execution.
 
+### Download & Setup Browser Binaries Automatically:
 ```bash
-python3 google_maps_leads/browser_test.py
+# Downloads and configures browser binaries for CLI agent usage
+reachy-browser-install --install
 ```
 
-### Expected Exit Status:
+### Run Autonomous Browser Self-Diagnostics:
+```bash
+python3 google_maps_leads/browser_test.py
+# or via CLI console script:
+reachy-browser-test
+```
+
+### Dispatch Autonomous Web Errands:
+Agents can command the browser to navigate, inspect, take labeled DOM snapshots, or capture screenshots:
+```bash
+# Perform DOM evaluation errand on target site:
+reachy-browser-install --url "https://www.google.com/maps" --task eval
+
+# Capture accessibility/interactive DOM snapshot errand:
+reachy-browser-install --url "https://example.com" --task snapshot
+
+# Capture full-page screenshot errand:
+reachy-browser-install --url "https://example.com" --task screenshot
+```
+
+### Expected Diagnostic Status:
 - **Exit code `0`**: All 4 checks passed (binary located, headless launched, DOM loaded, page title verified). Proceed to scraping.
 - **Exit code `1`**: Chrome binary missing or permissions error.
   - On Ubuntu/Debian: `sudo apt-get install -y google-chrome-stable` or `sudo apt-get install -y chromium-browser`
