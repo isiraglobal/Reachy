@@ -218,3 +218,24 @@ def process_lead_batch(leads: List[Dict[str, Any]], max_workers: int = 12) -> Li
                 enriched.append(orig)
 
     return enriched
+
+
+def main():
+    filepath = os.path.join(os.path.dirname(__file__), "philly_venues_1000.json")
+    if not os.path.exists(filepath):
+        print(f"Dataset not found at {filepath}")
+        return
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        venues = json.load(f)
+
+    print(f"Loaded {len(venues)} venues from {filepath}")
+    phones = sum(1 for v in venues if v.get("phone"))
+    emails = sum(1 for v in venues if v.get("email"))
+    print(f"Current Stats -> Venues with Phone: {phones} ({phones/len(venues)*100:.1f}%) | Venues with Email: {emails} ({emails/len(venues)*100:.1f}%)")
+    print("Enricher ready. To re-crawl a slice: process_lead_batch(venues[:20])")
+
+
+if __name__ == "__main__":
+    main()
+
