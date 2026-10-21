@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "google-maps-leads"
+version = "0.1.0"
+description = "Autonomous agent tool and scraper for extracting rich business leads from Google Maps"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+]
+
+[project.scripts]
+gmaps-leads = "google_maps_leads.cli:main"
+gmaps-leads-mcp = "google_maps_leads.mcp_server:main"
