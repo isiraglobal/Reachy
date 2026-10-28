@@ -99,6 +99,21 @@ reachy accounts add-smtp \
 
 Gmail API (official OAuth, least-privilege scopes):
 
+#### Required Google OAuth Scopes (One-Time Setup)
+
+When creating your OAuth Consent Screen in Google Cloud Console, select these scopes once. This grants the AI agent all required permissions to manage accounts, deliver outreach, track replies, and monitor bounce rates without manual re-authorization:
+
+| Scope | Purpose for Autonomous Outreach & Tracking |
+| :--- | :--- |
+| `https://www.googleapis.com/auth/gmail.send` | Enables the agent to deliver outreach emails via the official Google REST API without accessing personal mailbox items. |
+| `https://www.googleapis.com/auth/gmail.readonly` | Enables the agent to track prospect replies, thread conversations, and auto-detect bounce/DSN failure notifications. |
+| `openid` | Verifies user identity during OAuth 2.0 handshake. |
+| `email` | Confirms the authorized Google account matches the intended sender address. |
+
+> **Security Note**: Broad, dangerous scopes like `mail.google.com` (full mailbox access/deletion) or `gmail.modify` are never requested.
+
+Connect your account:
+
 ```bash
 # With REACHY_GOOGLE_CLIENT_ID and REACHY_GOOGLE_CLIENT_SECRET in .env (recommended):
 reachy accounts add-gmail \
@@ -114,7 +129,7 @@ reachy accounts add-gmail \
   --open-browser
 ```
 
-See [docs/GMAIL_OAUTH_SETUP.md](docs/GMAIL_OAUTH_SETUP.md) for full Google Cloud Console instructions and scope explanations. Reachy never asks for a Google password.
+See [docs/GMAIL_OAUTH_SETUP.md](docs/GMAIL_OAUTH_SETUP.md) for full step-by-step instructions. Reachy never asks for a Google password.
 
 ### 4. Create and run a campaign
 
