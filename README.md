@@ -38,6 +38,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[browser,gmail]"
 python -m playwright install chromium
+cp .env.example .env
 reachy init
 reachy doctor
 ```
@@ -99,15 +100,21 @@ reachy accounts add-smtp \
 Gmail API (official OAuth, least-privilege scopes):
 
 ```bash
+# With REACHY_GOOGLE_CLIENT_ID and REACHY_GOOGLE_CLIENT_SECRET in .env (recommended):
+reachy accounts add-gmail \
+  --email you@yourdomain.com \
+  --permitted-use-acknowledged \
+  --open-browser
+
+# Or with downloaded client_secrets.json:
 reachy accounts add-gmail \
   --email you@yourdomain.com \
   --client-secrets ~/google-oauth-client.json \
-  --display-name "Your Name" \
   --permitted-use-acknowledged \
   --open-browser
 ```
 
-`--permitted-use-acknowledged` is required before live sends. Reachy never asks for a Google password.
+See [docs/GMAIL_OAUTH_SETUP.md](docs/GMAIL_OAUTH_SETUP.md) for full Google Cloud Console instructions and scope explanations. Reachy never asks for a Google password.
 
 ### 4. Create and run a campaign
 
@@ -209,6 +216,7 @@ Most commands accept `--json` before the subcommand.
 
 - [Install](docs/INSTALL.md)
 - [Configuration](docs/CONFIGURATION.md)
+- [Google OAuth setup](docs/GMAIL_OAUTH_SETUP.md)
 - [Security](docs/SECURITY.md)
 - [Compliance](docs/COMPLIANCE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
