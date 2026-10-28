@@ -34,7 +34,10 @@ jobs:
 
     - name: Test CLI invocation & doctor
       run: |
+        reachy --version
         reachy --help
         reachy-leads --help
         reachy init --home /tmp/reachy-test
         reachy doctor --home /tmp/reachy-test
+        reachy --home /tmp/reachy-test2 init
+        reachy --home /tmp/reachy-test2 doctor

@@ -52,6 +52,31 @@ from .warmup import get_account_warmup_status, plan_warmup_batches
 
 
 def main(argv: Optional[list[str]] = None) -> None:
+    if argv is None:
+        raw_argv = sys.argv[1:]
+    else:
+        raw_argv = list(argv)
+
+    # Normalize position of global flags (--home, --json) so they can appear anywhere
+    normalized_argv: list[str] = []
+    global_args: list[str] = []
+    i = 0
+    while i < len(raw_argv):
+        arg = raw_argv[i]
+        if arg == "--home" and i + 1 < len(raw_argv):
+            global_args.extend([arg, raw_argv[i + 1]])
+            i += 2
+        elif arg.startswith("--home="):
+            global_args.append(arg)
+            i += 1
+        elif arg == "--json":
+            global_args.append(arg)
+            i += 1
+        else:
+            normalized_argv.append(arg)
+            i += 1
+    argv = global_args + normalized_argv
+
     parser = _parser()
     args = parser.parse_args(argv)
     config = ReachyConfig.load(home=args.home)
