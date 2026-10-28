@@ -16,6 +16,25 @@ from typing import Mapping, Optional
 DEFAULT_HOME = Path.home() / ".reachy"
 
 
+def load_dotenv(path: Optional[str | Path] = None) -> None:
+    """Load key-value pairs from a .env file into os.environ if not already present."""
+    candidates = [Path(path)] if path else [Path(".env"), DEFAULT_HOME / ".env"]
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            try:
+                for line in candidate.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    if key and key not in os.environ:
+                        os.environ[key] = val
+            except Exception:
+                pass
+
+
 @dataclass(frozen=True)
 class ReachyConfig:
     home: Path
@@ -36,6 +55,7 @@ class ReachyConfig:
         home: Optional[str | Path] = None,
         env: Optional[Mapping[str, str]] = None,
     ) -> "ReachyConfig":
+        load_dotenv()
         env = dict(os.environ if env is None else env)
         root = Path(home or env.get("REACHY_HOME") or DEFAULT_HOME).expanduser().resolve()
         db_path = Path(env.get("REACHY_DB", root / "reachy.sqlite3")).expanduser()

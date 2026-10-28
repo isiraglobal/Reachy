@@ -10,6 +10,10 @@ Reachy reads a small set of environment variables and stores operational data in
 | `REACHY_DB` | `$REACHY_HOME/reachy.sqlite3` | SQLite database path. |
 | `REACHY_SECRET_KEY_PATH` | `$REACHY_HOME/secret.key` | Fernet key file when `REACHY_SECRET_KEY` is not set. |
 | `REACHY_SECRET_KEY` | unset | Urlsafe-base64 Fernet key supplied by a secret manager. Takes precedence over the key file. |
+| `REACHY_GOOGLE_CLIENT_ID` | unset | Google OAuth 2.0 Desktop Client ID (see `docs/GMAIL_OAUTH_SETUP.md`). |
+| `REACHY_GOOGLE_CLIENT_SECRET` | unset | Google OAuth 2.0 Client Secret. |
+| `REACHY_AI_KEY` | unset | LLM API key for autonomous subject line and body copy generation. |
+| `REACHY_SMTP_PASSWORD` | unset | Default SMTP password or app password. |
 | `REACHY_LOG` | `$REACHY_HOME/reachy.log` | Structured application log. |
 | `REACHY_TEST_RECIPIENT` | unset | Required for test mode; every test message is redirected here. |
 | `REACHY_ALLOW_CATCH_ALL` | `false` | Allow `catch_all` contacts to pass the policy gate. |
@@ -17,7 +21,7 @@ Reachy reads a small set of environment variables and stores operational data in
 | `REACHY_RECONCILE_GRACE` | `900` | Seconds to wait before treating an unresolved uncertain send as failed. |
 | `REACHY_UNSUBSCRIBE_FOOTER` | built-in sentence | Footer appended to every outbound body. |
 
-Boolean variables accept `1`, `true`, `yes`, or `on` (case-insensitive).
+Boolean variables accept `1`, `true`, `yes`, or `on` (case-insensitive). Reachy automatically loads `.env` from the project root or `$REACHY_HOME/.env` on startup. See `.env.example` for a documented template.
 
 The CLI also accepts `--home PATH` and `--json` before the subcommand:
 
@@ -49,9 +53,14 @@ TLS is required. Reachy uses STARTTLS where advertised (and on port 587) and ver
 
 ### Gmail API
 
-Required: `--email`, `--client-secrets`. Optional: `--display-name`, `--daily-limit`, `--port` for the local OAuth callback, `--open-browser`, `--permitted-use-acknowledged`.
+Required: `--email`. Credentials can be supplied either:
+1. Via `.env` with `REACHY_GOOGLE_CLIENT_ID` and `REACHY_GOOGLE_CLIENT_SECRET` (recommended).
+2. Via CLI flags `--client-id` and `--client-secret`.
+3. Via `--client-secrets /path/to/credentials.json`.
 
-Scopes are limited to `gmail.send` and `gmail.readonly` plus OpenID/email identity. Tokens are encrypted. `reachy accounts disconnect --id N` revokes the token with Google and deletes the local secret.
+Optional: `--display-name`, `--daily-limit`, `--port` for the local OAuth callback, `--open-browser`, `--permitted-use-acknowledged`.
+
+Scopes are limited to `gmail.send` and `gmail.readonly` plus OpenID/email identity (least-privilege). Tokens are encrypted with Fernet before writing to SQLite. `reachy accounts disconnect --id N` revokes the token with Google and deletes the local secret. See [Google OAuth Setup Guide](GMAIL_OAUTH_SETUP.md) for full details.
 
 ### Mock
 

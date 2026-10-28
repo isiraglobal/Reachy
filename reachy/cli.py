@@ -156,7 +156,9 @@ def _parser() -> argparse.ArgumentParser:
     a_smtp.add_argument("--permitted-use-acknowledged", action="store_true")
     a_gmail = accounts_sub.add_parser("add-gmail")
     a_gmail.add_argument("--email", required=True)
-    a_gmail.add_argument("--client-secrets", required=True)
+    a_gmail.add_argument("--client-secrets", default=None, help="Path to Google client_secrets.json (optional if set in .env)")
+    a_gmail.add_argument("--client-id", default=None, help="Google OAuth 2.0 Client ID (or set REACHY_GOOGLE_CLIENT_ID in .env)")
+    a_gmail.add_argument("--client-secret", default=None, help="Google OAuth 2.0 Client Secret (or set REACHY_GOOGLE_CLIENT_SECRET in .env)")
     a_gmail.add_argument("--display-name", default="")
     a_gmail.add_argument("--daily-limit", type=int, default=10)
     a_gmail.add_argument("--port", type=int, default=0)
@@ -627,7 +629,13 @@ def _accounts(args, config: ReachyConfig, db: Database) -> int:
         )
         oauth = GoogleOAuth(_cipher(config))
         oauth.authorize(
-            db, account_id, args.client_secrets, port=args.port, open_browser=args.open_browser
+            db,
+            account_id,
+            client_secrets_path=args.client_secrets,
+            client_id=args.client_id,
+            client_secret=args.client_secret,
+            port=args.port,
+            open_browser=args.open_browser,
         )
         db.execute(
             "UPDATE accounts SET status='ACTIVE', authorized_at=?, updated_at=? WHERE id=?",

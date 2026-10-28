@@ -106,7 +106,9 @@ class GoogleOAuth:
         self,
         db: Database,
         account_id: int,
-        client_secrets_path: str | Path,
+        client_secrets_path: Optional[str | Path] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
         port: int = 0,
         open_browser: bool = False,
     ) -> dict[str, Any]:
@@ -116,11 +118,37 @@ class GoogleOAuth:
             raise OAuthError(
                 "Gmail OAuth requires the 'gmail' extra: pip install 'reachy[gmail]'"
             ) from exc
-        if not Path(client_secrets_path).exists():
-            raise OAuthError(f"Google OAuth client secrets file not found: {client_secrets_path}")
-        flow = InstalledAppFlow.from_client_secrets_file(
-            str(client_secrets_path), scopes=self.scopes
-        )
+
+        client_id = client_id or os.environ.get("REACHY_GOOGLE_CLIENT_ID")
+        client_secret = client_secret or os.environ.get("REACHY_GOOGLE_CLIENT_SECRET")
+
+        if client_secrets_path:
+            path = Path(client_secrets_path)
+            if not path.exists():
+                raise OAuthError(f"Google OAuth client secrets file not found: {client_secrets_path}")
+            flow = InstalledAppFlow.from_client_secrets_file(
+                str(path), scopes=self.scopes
+            )
+        elif client_id and client_secret:
+            client_config = {
+                "installed": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost", "http://localhost:0"],
+                }
+            }
+            flow = InstalledAppFlow.from_client_config(client_config, scopes=self.scopes)
+        else:
+            raise OAuthError(
+                "Missing Google OAuth credentials. Please provide one of:\n"
+                "  1. Set REACHY_GOOGLE_CLIENT_ID and REACHY_GOOGLE_CLIENT_SECRET in .env\n"
+                "  2. Pass --client-id and --client-secret to `reachy accounts add-gmail`\n"
+                "  3. Pass --client-secrets /path/to/credentials.json\n\n"
+                "See docs/GMAIL_OAUTH_SETUP.md for step-by-step guidance."
+            )
+
         credentials = flow.run_local_server(
             port=port,
             open_browser=open_browser,
@@ -133,15 +161,16 @@ class GoogleOAuth:
 
     def _payload_from_credentials(self, credentials) -> dict[str, Any]:
         expiry = getattr(credentials, "expiry", None)
+        id_token = getattr(credentials, "id_token", None)
         return {
-            "token": credentials.token,
-            "refresh_token": credentials.refresh_token,
+            "token": str(credentials.token) if credentials.token else None,
+            "refresh_token": str(credentials.refresh_token) if getattr(credentials, "refresh_token", None) else None,
             "token_uri": getattr(credentials, "token_uri", "https://oauth2.googleapis.com/token"),
-            "client_id": credentials.client_id,
-            "client_secret": credentials.client_secret,
+            "client_id": getattr(credentials, "client_id", None),
+            "client_secret": getattr(credentials, "client_secret", None),
             "scopes": list(credentials.scopes or self.scopes),
             "expiry": expiry.isoformat() if isinstance(expiry, datetime) else None,
-            "email": getattr(credentials, "id_token", None),  # informational only
+            "email": id_token if isinstance(id_token, str) else None,  # informational only
         }
 
     # ------------------------------------------------------------- lifecycle
