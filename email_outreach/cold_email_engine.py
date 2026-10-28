@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Unified Cold Email Outreach Engine & Campaign Execution System.
+"""Legacy cold-outreach reporting and simulation tool.
 
-Synthesizes:
-1. The 5-Pillar Architecture (Volume, The List, Inbox Burn, Systems, Results)
-2. Aaron Shepherd's 20M Send Rules (The 5 Truths: Broad lists, Work-first offers,
-   2-3 lowercase word subject lines, F1 Tire inbox rotation, 1 real tied detail).
-
-Executes end-to-end campaign generation, deliverability verification, copy synthesis,
-and generates a comprehensive executive audit report directly from your 1,000 real leads.
+This script generates local volume plans, copy samples, and an audit report from
+lead data. It does not send email, contact a provider, or verify inbox placement.
+Use the ``reachy`` CLI for production sending and compliance controls.
 """
 
 import csv
@@ -23,6 +19,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import dns.resolver
 from rich.console import Console
@@ -67,7 +64,7 @@ class VolumeCapacityPlan:
 
 
 class ESPMatcher:
-    """Detects target receiving ESP to apply the 6.5X Reply Multiplier."""
+    """Detects the target receiving ESP for report grouping. No deliverability multiplier is claimed."""
     GOOGLE_MX = [r"google\.com", r"googlemail\.com", r"aspmx\.l\.google\.com"]
     MICROSOFT_MX = [r"outlook\.com", r"office365\.com", r"protection\.outlook\.com"]
 
@@ -85,15 +82,15 @@ class ESPMatcher:
         if any(re.search(p, combined) for p in cls.GOOGLE_MX):
             esp = "Google Workspace"
             rec_sender = "Google Workspace"
-            reply_exp = "5-10% reply rate"
+            reply_exp = "not measured"
         elif any(re.search(p, combined) for p in cls.MICROSOFT_MX):
             esp = "Microsoft 365"
             rec_sender = "Microsoft 365"
-            reply_exp = "0.5-1% default -> Boosts 6.5X with M365 sender"
+            reply_exp = "not measured"
         else:
             esp = "Other / Private SMTP"
             rec_sender = "Google Workspace"
-            reply_exp = "1-3% reply rate"
+            reply_exp = "not measured"
 
         return {
             "domain": domain,
@@ -595,15 +592,11 @@ def execute_cold_email_system():
     config_inboxes_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inboxes.json")
     if os.path.exists(config_inboxes_path):
         fleet_mgr.load_from_file(config_inboxes_path)
-    else:
-        # Attach default production-ready rotation pool
-        fleet_mgr.attach_multiple([
-            SenderAccount(email="alex@getreachflow.com", display_name="Alex Turner", provider="Google Workspace", daily_limit=10, age_days=32, status="ACTIVE"),
-            SenderAccount(email="sarah@scaleleads-direct.com", display_name="Sarah Miller", provider="Google Workspace", daily_limit=10, age_days=40, status="ACTIVE"),
-            SenderAccount(email="david@corp-outreach365.com", display_name="David Vance", provider="Microsoft 365", daily_limit=10, age_days=28, status="ACTIVE"),
-            SenderAccount(email="jordan@apex-dentalsolutions.com", display_name="Jordan Reed", provider="Microsoft 365", daily_limit=10, age_days=18, status="ACTIVE"),
-            SenderAccount(email="warmup-batch@getreachflow.com", display_name="Fleet Warmup", provider="Google Workspace", daily_limit=5, age_days=10, status="WARMING")
-        ])
+    if not fleet_mgr.accounts:
+        console.print(
+            "[yellow]No sending inboxes are configured. This is a simulation only; "
+            "use the `reachy` CLI with an OAuth/SMTP account for real delivery.[/yellow]"
+        )
 
     inbox_table = Table(title="3. Attached Sending Inboxes (Multi-Account Rotation Pool)", header_style="bold magenta")
     inbox_table.add_column("Sending Email")
@@ -619,9 +612,9 @@ def execute_cold_email_system():
 
     # 4. Inbox Burn & F1 Tire Reorder Audit
     fleet_burn = [
-        InboxFleetStatus("jordan@reach-corp.com", age_days=25, daily_reply_rates_14d=[0.04]*14, bounce_rate=0.01, total_sent_14d=140),
-        InboxFleetStatus("outreach@scale-lead.net", age_days=48, daily_reply_rates_14d=[0.025]*7 + [0.012]*7, bounce_rate=0.01, total_sent_14d=140),
-        InboxFleetStatus("contact@cold-inbox.org", age_days=80, daily_reply_rates_14d=[0.0]*14, bounce_rate=0.0, total_sent_14d=140)
+        InboxFleetStatus("demo.sender1@example.com", age_days=25, daily_reply_rates_14d=[0.04]*14, bounce_rate=0.01, total_sent_14d=140),
+        InboxFleetStatus("demo.sender2@example.com", age_days=48, daily_reply_rates_14d=[0.025]*7 + [0.012]*7, bounce_rate=0.01, total_sent_14d=140),
+        InboxFleetStatus("demo.sender3@example.com", age_days=80, daily_reply_rates_14d=[0.0]*14, bounce_rate=0.0, total_sent_14d=140)
     ]
     burn_table = Table(title="4. Inbox Burn & F1 Tire Hot-Swap Monitor", header_style="bold red")
     burn_table.add_column("Inbox")

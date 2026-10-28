@@ -14,7 +14,6 @@ import logging
 import os
 import re
 import ssl
-import subprocess
 import time
 import urllib.parse
 import urllib.request
@@ -31,8 +30,6 @@ logging.basicConfig(
 logger = logging.getLogger("contact_discovery")
 
 SSL_CTX = ssl.create_default_context(cafile=certifi.where())
-SSL_CTX.check_hostname = False
-SSL_CTX.verify_mode = ssl.CERT_NONE
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",

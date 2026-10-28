@@ -1,0 +1,10 @@
+[
+  {
+    "email": "sender@your-domain.example",
+    "display_name": "Sender Name",
+    "provider": "Google Workspace",
+    "daily_limit": 10,
+    "age_days": 30,
+    "status": "ACTIVE"
+  }
+]

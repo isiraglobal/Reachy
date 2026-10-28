@@ -2,9 +2,7 @@ import json
 import logging
 import os
 import re
-import shlex
 import ssl
-import subprocess
 import time
 import urllib.parse
 import urllib.request
@@ -13,16 +11,18 @@ from typing import Any, Dict, List, Optional, Tuple
 import bs4
 import certifi
 
+from .drivers import BrowserDriver, build_driver
 from .models import Lead
 
 logger = logging.getLogger("google_maps_leads")
 
 
 class GoogleMapsScraper:
-    """Production-grade Google Maps leads extractor.
+    """Google Maps leads extractor with Playwright preferred.
 
-    Uses `agent-browser` for headless/headed Google Maps navigation and interaction,
-    with smart fallback website and contact enrichment.
+    The legacy ``agent-browser`` CLI is used only as a fallback. Browser
+    automation never attempts to bypass CAPTCHAs, access controls, or rate
+    limits; blocked sources are reported and skipped.
     """
 
     def __init__(
@@ -30,60 +30,58 @@ class GoogleMapsScraper:
         headed: bool = True,
         viewport_w: int = 1920,
         viewport_h: int = 1080,
-        proxy: Optional[str] = None
+        proxy: Optional[str] = None,
+        backend: str = "auto",
+        browser_driver: Optional[BrowserDriver] = None,
     ):
         self.headed = headed
         self.viewport_w = viewport_w
         self.viewport_h = viewport_h
         self.proxy = proxy or os.environ.get("AGENT_BROWSER_PROXY") or os.environ.get("HTTPS_PROXY")
+        self.backend = backend
+        self._driver = browser_driver
         self._ssl_ctx = ssl.create_default_context(cafile=certifi.where())
 
-    def _run_cli(self, args: List[str], timeout: int = 35) -> str:
-        """Executes an agent-browser command."""
-        cmd = ["agent-browser"] + args
-        logger.debug(f"Executing: {' '.join(shlex.quote(c) for c in cmd)}")
-        try:
-            res = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False
+    def _get_driver(self) -> BrowserDriver:
+        if self._driver is None:
+            self._driver = build_driver(
+                backend=self.backend,
+                headed=self.headed,
+                proxy=self.proxy,
+                viewport=(self.viewport_w, self.viewport_h),
             )
-            if res.returncode != 0 and res.stderr:
-                logger.warning(f"agent-browser: {res.stderr.strip()}")
-            return res.stdout.strip()
-        except subprocess.TimeoutExpired:
-            logger.error(f"Timeout ({timeout}s) running: {' '.join(cmd)}")
-            return ""
-        except Exception as e:
-            logger.error(f"Error running agent-browser: {e}")
-            return ""
+        return self._driver
+
+    def close(self) -> None:
+        if self._driver is not None:
+            try:
+                self._driver.close()
+            except Exception:
+                pass
+            self._driver = None
 
     def _eval_js(self, js_code: str) -> Any:
-        """Runs JavaScript via agent-browser eval and parses JSON output."""
-        output = self._run_cli(["eval", js_code])
-        if not output:
-            return None
-        try:
-            return json.loads(output)
-        except Exception:
-            return output
+        """Runs JavaScript through the configured browser driver."""
+        output = self._get_driver().eval(js_code)
+        if isinstance(output, str):
+            try:
+                return json.loads(output)
+            except json.JSONDecodeError:
+                return output
+        return output
 
     def ensure_browser(self, initial_url: str = "https://www.google.com/maps"):
-        """Ensures the agent-browser daemon is running and has the right viewport."""
-        test_url = self._run_cli(["get", "url"], timeout=5)
-        if not test_url or "google.com" not in test_url:
-            logger.info("Initializing agent-browser session...")
-            subprocess.run(["pkill", "-f", "agent-browser"], capture_output=True)
-            time.sleep(1)
-            open_args = ["open", initial_url]
-            if self.headed:
-                open_args.append("--headed")
-            if self.proxy:
-                open_args.extend(["--proxy", self.proxy])
-            self._run_cli(open_args, timeout=20)
-            self._run_cli(["set", "viewport", str(self.viewport_w), str(self.viewport_h)])
+        """Starts or reuses a browser session without killing other processes."""
+        driver = self._get_driver()
+        current = ""
+        try:
+            current = driver.get_url()
+        except Exception:
+            current = ""
+        if not current or "google.com" not in current:
+            logger.info("Initializing browser session (%s)...", getattr(driver, "name", "driver"))
+            driver.open(initial_url)
+            driver.set_viewport(self.viewport_w, self.viewport_h)
             self.dismiss_cookie_dialog()
 
     def dismiss_cookie_dialog(self):
@@ -208,8 +206,9 @@ class GoogleMapsScraper:
         search_url = f"https://www.google.com/maps/search/{encoded}"
         logger.info(f"Navigating to: {search_url}")
 
-        self._run_cli(["open", search_url], timeout=25)
-        self._run_cli(["wait", "3000"])
+        driver = self._get_driver()
+        driver.open(search_url)
+        driver.wait(3000)
         self.dismiss_cookie_dialog()
 
         seen_leads: Dict[str, Lead] = {}
@@ -263,8 +262,9 @@ class GoogleMapsScraper:
         # If website or phone is missing, extract directly from the Google Maps place profile via agent-browser
         if lead.url and (not lead.website or not lead.phone or not lead.address):
             try:
-                self._run_cli(["open", lead.url], timeout=20)
-                time.sleep(1.8)
+                driver = self._get_driver()
+                driver.open(lead.url)
+                driver.wait(1800)
                 details_js = """(() => {
                     const website = document.querySelector('a[data-item-id=\"authority\"]')?.href || null;
                     const phone = document.querySelector('button[data-item-id*=\"phone\"]')?.innerText?.trim()?.replace(/^[\\s\\S]*?\\+/, '+') || null;
@@ -342,8 +342,9 @@ class GoogleMapsScraper:
             # Step B: If HTTP fails (e.g. Cloudflare / JS rendering), open via agent-browser
             if not site_html:
                 try:
-                    self._run_cli(["open", clean_site], timeout=20)
-                    time.sleep(2)
+                    driver = self._get_driver()
+                    driver.open(clean_site)
+                    driver.wait(2000)
                     browser_data_js = """(() => {
                         const text = document.body ? document.body.innerText : '';
                         const mailtos = Array.from(document.querySelectorAll('a[href^=\"mailto:\"]'))

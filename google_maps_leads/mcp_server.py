@@ -1,88 +1,106 @@
-"""Model Context Protocol (MCP) Server for Google Maps Leads.
+"""Model Context Protocol server for Reachy.
 
-Compatible with Cursor, Claude Desktop, Antigravity, and any MCP client.
-Supports both MCP 2.x (`MCPServer`) and fallback to MCP 1.x.
+Exposes lead discovery and browser diagnostics over stdio. Email credentials
+and campaign execution are not accessible through this server.
 """
 
-import asyncio
-import json
-import logging
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from .models import Lead
-from .scraper import GoogleMapsScraper
+import logging
+from typing import Any
+
+import bs4
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("google_maps_leads_mcp")
+logger = logging.getLogger("reachy_mcp")
+
+
+def _scrape(query: str, limit: int, enrich: bool, headed: bool) -> list[dict[str, Any]]:
+    from .scraper import GoogleMapsScraper
+
+    clamped = min(max(1, int(limit)), 100)
+    scraper = GoogleMapsScraper(headed=headed)
+    try:
+        leads = scraper.scrape_leads(query=query, limit=clamped, enrich=enrich)
+        return [lead.to_dict() for lead in leads]
+    finally:
+        scraper.close()
+
+
+def _extract_url(url: str) -> dict[str, Any]:
+    from reachy.web import extract_contacts_from_html, fetch_html
+
+    html, final_url = fetch_html(url, timeout=15)
+    soup = bs4.BeautifulSoup(html, "html.parser")
+    contacts = extract_contacts_from_html(html, final_url)
+    return {
+        "url": final_url,
+        "title": soup.title.get_text(strip=True) if soup.title else None,
+        "emails": contacts["emails"],
+        "phones": contacts["phones"],
+        "json_ld_types": contacts.get("json_ld_types", []),
+    }
+
 
 try:
-    from mcp.server.mcpserver import MCPServer
-    server = MCPServer("google-maps-leads")
+    from mcp.server.fastmcp import FastMCP
+except ImportError:  # mcp 2.x renamed FastMCP to MCPServer
+    from mcp.server.mcpserver import MCPServer as FastMCP
 
-    @server.tool()
-    def extract_google_maps_leads(
-        query: str,
-        limit: int = 10,
-        enrich: bool = True,
-        headed: bool = True
-    ) -> List[Dict[str, Any]]:
-        """Search and extract business leads from Google Maps using autonomous browser automation.
+mcp = FastMCP("reachy")
 
-        Args:
-            query: The search query, e.g. 'Dentists in Austin, TX' or 'Coffee shops in Seattle'.
-            limit: Maximum number of leads to extract (default: 10, max: 50).
-            enrich: Whether to automatically enrich phone, email, website and socials (default: True).
-            headed: Whether to display the browser window (default: True).
 
-        Returns:
-            A list of business lead objects containing title, category, rating, reviews,
-            phone, website, email, address, social profiles, and maps URL.
-        """
-        clamped_limit = min(max(1, limit), 50)
-        scraper = GoogleMapsScraper(headed=headed)
-        leads = scraper.scrape_leads(query=query, limit=clamped_limit, enrich=enrich)
-        return [lead.to_dict() for lead in leads]
+@mcp.tool()
+def extract_google_maps_leads(
+    query: str,
+    limit: int = 10,
+    enrich: bool = True,
+    headed: bool = False,
+) -> list[dict[str, Any]]:
+    """Search Google Maps and return normalized lead dictionaries.
 
-    def main():
-        server.run()
+    Browser automation is used only where permitted. CAPTCHAs and access
+    controls are never bypassed; blocked sources return an empty result.
+    """
+    return _scrape(query, limit, enrich, headed)
 
-except ImportError:
-    # Fallback to standard Low-Level Server if mcpserver is unavailable
-    from mcp.server import Server
-    from mcp.server.stdio import stdio_server
-    import mcp.types as types
 
-    server = Server("google-maps-leads")
+@mcp.tool()
+def scrape_leads(
+    query: str,
+    max_results: int = 20,
+    enrich_contacts: bool = True,
+    headed: bool = False,
+) -> list[dict[str, Any]]:
+    """Alias used by agent integrations."""
+    return _scrape(query, max_results, enrich_contacts, headed)
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
-        args = arguments or {}
-        if name == "extract_google_maps_leads":
-            query = args.get("query", "")
-            limit = min(int(args.get("limit", 10)), 50)
-            enrich = bool(args.get("enrich", True))
-            headed = bool(args.get("headed", True))
 
-            def _run():
-                scraper = GoogleMapsScraper(headed=headed)
-                return scraper.scrape_leads(query=query, limit=limit, enrich=enrich)
+@mcp.tool()
+def search_and_extract(url: str) -> dict[str, Any]:
+    """Fetch one public URL and extract title, emails, phones, and JSON-LD types."""
+    try:
+        return _extract_url(url)
+    except ValueError as exc:
+        return {"error": str(exc)}
 
-            loop = asyncio.get_running_loop()
-            leads = await loop.run_in_executor(None, _run)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=json.dumps([l.to_dict() for l in leads], indent=2, ensure_ascii=False)
-                )
-            ]
-        return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 
-    async def _async_main():
-        async with stdio_server() as (read_stream, write_stream):
-            await server.run(read_stream, write_stream, server.create_initialization_options())
+@mcp.tool()
+def browser_diagnostics(headed: bool = False, url: str = "") -> dict[str, Any]:
+    """Check Playwright/Chromium availability and report remediation steps."""
+    from reachy.browser import check_browser
+    from reachy.web import validate_public_url
 
-    def main():
-        asyncio.run(_async_main())
+    if url:
+        try:
+            validate_public_url(url)
+        except ValueError as exc:
+            return {"error": str(exc)}
+    return check_browser(headless=not headed, target_url=url or None).as_dict()
+
+
+def main() -> None:
+    mcp.run()
 
 
 if __name__ == "__main__":

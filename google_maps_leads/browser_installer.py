@@ -52,16 +52,24 @@ def find_system_chrome() -> str | None:
 
 
 def install_browser(with_deps: bool = True) -> bool:
-    """Installs required browser binaries for autonomous CLI execution."""
+    """Installs Chromium for Playwright (preferred), with legacy fallbacks."""
     system = platform.system()
     logger.info(f"[*] Detected operating system: {system} ({platform.machine()})")
 
-    # Step 1: Check if Chrome or Chromium already exists
-    existing = find_system_chrome()
-    if existing:
-        logger.info(f"✓ Found existing browser binary at: {existing}")
+    # Step 1: Playwright-managed Chromium
+    try:
+        cmd = [sys.executable, "-m", "playwright", "install", "chromium"]
+        if with_deps and system == "Linux":
+            cmd.append("--with-deps")
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            logger.info("✓ Playwright Chromium installed successfully.")
+            return True
+        logger.warning(f"Playwright install output: {result.stdout} {result.stderr}")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"Playwright install failed: {exc}")
 
-    # Step 2: Use agent-browser install if available
+    # Step 2: Legacy agent-browser fallback
     agent_browser = shutil.which("agent-browser")
     if agent_browser:
         logger.info("[*] Executing 'agent-browser install'...")
@@ -98,50 +106,35 @@ def install_browser(with_deps: bool = True) -> bool:
 
 
 def run_autonomous_errand(url: str, task: str = "snapshot", headless: bool = True) -> dict:
-    """Executes a web errand or navigation task autonomously via CLI agent tools."""
+    """Executes a navigation/inspection errand via Playwright."""
     logger.info(f"[*] Commencing autonomous errand on: {url} (Action: {task})")
     report = {"url": url, "task": task, "success": False, "output": ""}
-
-    agent_browser = shutil.which("agent-browser")
-    if not agent_browser:
-        logger.error("✗ agent-browser CLI binary is not available.")
-        report["output"] = "agent-browser binary missing"
-        return report
-
-    # 1. Open the page
-    open_args = [agent_browser, "open", url]
-    if not headless:
-        open_args.append("--headed")
-    
     try:
-        subprocess.run(open_args, capture_output=True, text=True, timeout=25, check=False)
-        time.sleep(2)
+        from reachy.browser import PlaywrightDriver
 
-        # 2. Perform requested errand
-        if task == "snapshot":
-            res = subprocess.run([agent_browser, "snapshot", "-i"], capture_output=True, text=True, timeout=15)
-            report["output"] = res.stdout.strip()[:1000]
-            report["success"] = (res.returncode == 0)
-        elif task == "eval":
-            res = subprocess.run(
-                [agent_browser, "eval", "JSON.stringify({ title: document.title, url: window.location.href })"],
-                capture_output=True,
-                text=True,
-                timeout=15
-            )
-            report["output"] = res.stdout.strip()
-            report["success"] = (res.returncode == 0)
-        elif task == "screenshot":
-            screenshot_path = "browser_errand_screenshot.png"
-            res = subprocess.run([agent_browser, "screenshot", screenshot_path], capture_output=True, text=True, timeout=15)
-            report["output"] = f"Saved screenshot to {screenshot_path}"
-            report["success"] = (res.returncode == 0)
-        else:
-            report["output"] = f"Unknown task: {task}"
-    except Exception as e:
-        report["output"] = str(e)
-        logger.error(f"Errand execution error: {e}")
-
+        driver = PlaywrightDriver(headed=not headless)
+        try:
+            driver.open(url)
+            if task == "snapshot":
+                data = driver.eval(
+                    "({title: document.title, url: location.href, text: (document.body?.innerText || '').slice(0, 2000)})"
+                )
+                report["output"] = json.dumps(data, ensure_ascii=False)[:2000]
+            elif task == "eval":
+                data = driver.eval("({title: document.title, url: window.location.href})")
+                report["output"] = json.dumps(data, ensure_ascii=False)
+            elif task == "screenshot":
+                path = driver.screenshot("browser_errand_screenshot.png")
+                report["output"] = f"Saved screenshot to {path}"
+            else:
+                report["output"] = f"Unknown task: {task}"
+                return report
+            report["success"] = True
+        finally:
+            driver.close()
+    except Exception as exc:  # noqa: BLE001
+        report["output"] = str(exc)
+        logger.error(f"Errand execution error: {exc}")
     return report
 
 

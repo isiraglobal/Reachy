@@ -1,4 +1,9 @@
-"""Integration examples showing how to use google_maps_leads with popular AI agent frameworks."""
+"""Integration examples for the legacy google_maps_leads extractor.
+
+For production workflows use the ``reachy`` CLI, which adds provenance,
+verification, suppression, policy gates, and durable campaign execution.
+Browser automation never bypasses CAPTCHAs or access controls.
+"""
 
 # ==============================================================================
 # 1. LangChain / LangGraph Tool Integration
@@ -10,7 +15,7 @@ def langchain_example():
 
     @tool
     def extract_google_maps_leads(query: str, limit: int = 10, enrich: bool = True) -> list[dict]:
-        """Search Google Maps for businesses and extract leads with phone, email, website, and socials.
+        """Search Google Maps for businesses and extract available published contact details.
 
         Args:
             query: Search query, e.g. 'Coffee roasters in Portland OR' or 'Plumbers in Denver'
@@ -42,7 +47,7 @@ def crewai_example():
 
     class GoogleMapsLeadsTool(BaseTool):
         name: str = "Google Maps Leads Tool"
-        description: str = "Extracts verified business leads from Google Maps including contact info."
+        description: str = "Extracts business leads from Google Maps and available public contact details."
         args_schema: type[BaseModel] = GoogleMapsLeadsInput
 
         def _run(self, query: str, limit: int = 5) -> str:
@@ -61,7 +66,7 @@ def direct_sdk_tool_definition():
     """Tool specification for direct function calling with OpenAI / Gemini / Anthropic."""
     return {
         "name": "extract_google_maps_leads",
-        "description": "Searches Google Maps for businesses and extracts rich lead data (phone, email, website, social handles, address, rating).",
+        "description": "Searches Google Maps for businesses and extracts available lead fields (name, category, address, rating, phone, website when published).",
         "parameters": {
             "type": "object",
             "properties": {

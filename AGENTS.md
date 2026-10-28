@@ -1,211 +1,169 @@
-# AGENTS.md — Autonomous Agent Operational Guide for Reachy
+# AGENTS.md — Operational guide for Reachy
 
-Welcome, Agent. This repository (**Reachy** by **ISIRA Automations**) is configured for 100% headless, programmatic execution across CLI agents (Claude Code, Antigravity, Cursor, Codex, OpenHands, Windsurf, custom LangChain/CrewAI swarms).
+Reachy is a self-hosted B2B prospecting and outreach application by **ISIRA Automations**. This file tells CLI agents how to install, test, inspect, and operate it without unsafe shortcuts.
 
-Follow this specification to self-bootstrap, diagnose environment dependencies, discover leads, enrich contact details, and execute compliant cold outreach without human intervention.
+## Safety rules
 
----
+- Never send real prospect email while testing. Use `reachy accounts add-mock`, dry runs, or `REACHY_TEST_RECIPIENT`.
+- Never add CAPTCHA solving, access-control evasion, stealth patching, rate-limit circumvention, or account/domain rotation to bypass limits.
+- Never fabricate email addresses or mark guessed addresses as verified.
+- Never commit secrets, tokens, `.env` files, databases, keys, logs, browser profiles, or customer exports.
+- Do not claim inbox placement or "delivered" status without provider evidence.
+- A published business email is not automatic consent. Policy gates must remain conservative: unknown or failed checks block.
+- Preserve suppression records. Do not delete them to make a campaign pass.
 
-## 🧭 System Architecture & Directory Map
+## Architecture
 
 ```text
 Reachy/
-├── AGENTS.md                        # <- YOU ARE HERE: Machine-readable agent instruction manual
-├── README.md                        # Human/Repo overview & SEO presentation
-├── pyproject.toml                   # Python dependencies & CLI console entrypoints
-│
-├── google_maps_leads/               # ⚙️ BROWSER ENGINE & MCP PROTOCOL SERVER
-│   ├── browser_test.py              # Autonomous Chrome headless verification tool
-│   ├── scraper.py                   # Maps DOM crawler & authority parser
-│   ├── models.py                    # Lead data schemas (dataclass)
-│   ├── cli.py                       # CLI endpoint (`reachy-leads`)
-│   └── mcp_server.py                # Model Context Protocol stdio server (`reachy-mcp`)
-│
-├── leads/                           # 📍 LEAD DISCOVERY & CONTACT ENRICHMENT
-│   ├── README.md                    # Data schemas & validation benchmark guide
-│   ├── contact_enricher.py          # Cloudflare XOR cipher decoder & JSON-LD parser
-│   ├── philly_venues_1000.json      # Resolved lead dataset (phone numbers & booking emails)
-│   ├── leads_1000.json              # 1,000 raw deduplicated business records
-│   ├── sample_leads.csv             # CRM/Spreadsheet export
-│   └── run_1000_leads_audit.py      # Concurrent HTTP domain reachability auditor
-│
-└── email_outreach/                  # ✉️ MULTI-INBOX COLD DELIVERY ENGINE
-    ├── README.md                    # Outreach architecture & multi-inbox setup
-    ├── cold_email_engine.py         # Multi-fleet dispatcher (Aaron Shepherd 5 Truths)
-    ├── inboxes.json                 # Connected Google Workspace & M365 accounts
-    └── final_outreach_execution_report.json # Single consolidated audit log
+├── reachy/                          # Product runtime and CLI
+│   ├── cli.py                       # `reachy` command surface
+│   ├── db.py                        # SQLite, migrations, backup/restore, recovery
+│   ├── migrations/001_initial.sql   # Versioned schema
+│   ├── config.py                    # Paths and environment configuration
+│   ├── normalize.py                 # Lead/contact normalization and dedupe
+│   ├── verify.py                    # DNS/verification states and SMTP probe
+│   ├── scoring.py                   # Evidence-based ICP scoring
+│   ├── sample_qc.py                 # Seeded sample, reviews, approval gate
+│   ├── suppression.py               # Global suppression
+│   ├── policy.py                    # Pre-send compliance gate
+│   ├── campaign.py                  # Durable planning, claims, send, reconciliation
+│   ├── providers/                   # mock, SMTP/IMAP, Gmail API
+│   ├── oauth.py                     # Fernet token storage, Gmail OAuth lifecycle
+│   ├── replies.py                   # Reply sync, classification, drafts
+│   ├── health.py                    # Sender metrics and auto-pause
+│   ├── browser.py                   # Playwright diagnostics and profile
+│   ├── ingest.py                    # Import/discovery ingestion
+│   ├── web.py                       # Contact extraction from HTML
+│   └── logging_utils.py             # JSON logs and secret redaction
+├── google_maps_leads/               # Maps scraper, MCP server, legacy CLI
+│   ├── scraper.py                   # Playwright-preferred extraction
+│   ├── drivers.py                   # Browser driver abstraction
+│   ├── browser_test.py              # Playwright diagnostics
+│   ├── browser_installer.py         # Installer/diagnostics wrapper
+│   ├── mcp_server.py                # MCP stdio tools
+│   └── cli.py                       # `reachy-leads`
+├── leads/                           # Enrichment and historical datasets
+├── email_outreach/                  # Legacy non-sending report/simulation
+├── tests/                           # Mocked tests; no real email
+├── docs/                            # Install, config, security, compliance, release
+├── LICENSE                          # MIT
+└── pyproject.toml                   # Dependencies, extras, entrypoints
 ```
 
----
+SQLite is the only datastore. The default home is `~/.reachy`; override with `REACHY_HOME` or `--home`.
 
-## 🛠️ Step 1: Self-Bootstrap Environment
-
-Run the following commands in the workspace root to prepare the Python virtual environment:
+## Bootstrap
 
 ```bash
-# 1. Install dependencies in editable mode
-pip install -e .
-
-# 2. Verify installed console scripts
-reachy-leads --help
-reachy-mcp --help
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[browser,gmail,dev]"
+python -m playwright install chromium
+reachy init
+reachy doctor
+python3 -m pytest -q
 ```
 
----
-
-## 🧪 Step 2: Headless Browser Download, Setup & Autonomous Errands
-
-For autonomous agents operating in cloud environments, VPS, or containers without an existing browser, Reachy provides automatic browser binary downloading, environment verification, and autonomous web errand execution.
-
-### Download & Setup Browser Binaries Automatically:
-```bash
-# Downloads and configures browser binaries for CLI agent usage
-reachy-browser-install --install
-```
-
-### Run Autonomous Browser Self-Diagnostics:
-```bash
-python3 google_maps_leads/browser_test.py
-# or via CLI console script:
-reachy-browser-test
-```
-
-### Dispatch Autonomous Web Errands:
-Agents can command the browser to navigate, inspect, take labeled DOM snapshots, or capture screenshots:
-```bash
-# Perform DOM evaluation errand on target site:
-reachy-browser-install --url "https://www.google.com/maps" --task eval
-
-# Capture accessibility/interactive DOM snapshot errand:
-reachy-browser-install --url "https://example.com" --task snapshot
-
-# Capture full-page screenshot errand:
-reachy-browser-install --url "https://example.com" --task screenshot
-```
-
-### Expected Diagnostic Status:
-- **Exit code `0`**: All 4 checks passed (binary located, headless launched, DOM loaded, page title verified). Proceed to scraping.
-- **Exit code `1`**: Chrome binary missing or permissions error.
-  - On Ubuntu/Debian: `sudo apt-get install -y google-chrome-stable` or `sudo apt-get install -y chromium-browser`
-  - On macOS: Ensure Google Chrome is in `/Applications/Google Chrome.app`.
-
----
-
-## 📍 Step 3: Autonomous Lead Finding (Google Maps)
-
-### Option A: Using the CLI Entrypoint
-```bash
-# Scrape 20 coffee roasters in Portland OR and export directly to JSON
-reachy-leads "Coffee roasters in Portland OR" --limit 20 --output leads/portland_coffee.json
-
-# Scrape venues and export to CSV
-reachy-leads "Wedding venues in Philadelphia PA" --limit 50 --output leads/philly_venues.csv
-```
-
-### Option B: Programmatic Python Usage in Agent Workflows
-```python
-from google_maps_leads.scraper import GoogleMapsScraper
-
-# Always pass headed=False for headless server environments
-scraper = GoogleMapsScraper(headed=False)
-leads = scraper.scrape_leads(
-    query="Dentists in Austin TX",
-    limit=25,
-    enrich=True  # Automatically navigates websites to gather emails & socials
-)
-
-# Convert to list of standard dictionaries
-results = [lead.to_dict() for lead in leads]
-```
-
----
-
-## 📞 Step 4: Multi-Layer Contact & Phone Enrichment
-
-When you have a raw list of businesses with website URLs or Maps URLs, pass them through the multi-layer contact enricher:
+On Linux, if Chromium libraries are missing:
 
 ```bash
-python3 leads/contact_enricher.py
+sudo python -m playwright install --with-deps chromium
 ```
 
-### What `contact_enricher.py` handles automatically:
-1. **Google Maps Detail Panes**: Extracts direct office phone numbers (`data-item-id="phone"`) and canonical authority domains.
-2. **Cloudflare XOR Cipher Decoder**: Reverses email obfuscation hex strings (`data-cfemail` & `/cdn-cgi/l/email-protection#<hex>`) to retrieve hidden emails.
-3. **Schema.org JSON-LD Resolution**: Parses `<script type="application/ld+json">` for `LocalBusiness`, `Organization`, and `Restaurant` schema entities.
-4. **Subpage Traversal**: Automatically requests `/contact`, `/events`, `/private-events`, and `/book` for corporate inquiries.
-5. **Phone Formatting**: Standardizes numbers into E.164 or US formatted `+1 (XXX) XXX-XXXX`.
+Python 3.10+ is required; the repository is tested on Python 3.13.
 
----
+## Command surface
 
-## ✉️ Step 5: Multi-Inbox Cold Email Outreach Engine
-
-The outreach engine strictly follows **Aaron Shepherd's 20M Send Rules (The 5 Truths)** and the **5-Pillar Architecture**.
-
-### 1. Configure Attached Inboxes (`email_outreach/inboxes.json`)
-Inspect or update `email_outreach/inboxes.json` with sending accounts across multiple domains:
-
-```json
-[
-  {
-    "email": "alex@getreachflow.com",
-    "display_name": "Alex Turner",
-    "provider": "Google Workspace",
-    "daily_limit": 10,
-    "age_days": 32,
-    "status": "ACTIVE"
-  },
-  {
-    "email": "david@corp-outreach365.com",
-    "display_name": "David Vance",
-    "provider": "Microsoft 365",
-    "daily_limit": 10,
-    "age_days": 28,
-    "status": "ACTIVE"
-  }
-]
+```text
+reachy init | doctor | pause
+reachy icp create|list
+reachy import --file FILE --source SOURCE --list NAME
+reachy discover "query" --limit N --list NAME [--backend playwright]
+reachy leads list [--list NAME] [--limit N]
+reachy list create|sample|review|approve|show
+reachy copy styles|sample|generate|check-spam
+reachy warmup status [--account ID]
+reachy accounts add-mock|add-smtp|add-gmail|list|check|disconnect
+reachy campaign create|preview|approve|start|plan-batches|run|pause|resume|stop|reconcile|show
+reachy agent send [--campaign ID] [--max N] [--pace SECONDS]
+reachy tracking record-open|stats
+reachy replies sync|list|drafts|approve-draft
+reachy bounce | suppress | health | export | backup | restore | audit | report
+reachy browser check|open
 ```
 
-### 2. Execute the Outreach Dispatcher & Quality Gate
-```bash
-python3 email_outreach/cold_email_engine.py
-```
+Use `--json` before the subcommand for machine-readable output. Use `python3 -m reachy ...` if the console script is unavailable.
 
-### Built-in Guardrails Handled by the Engine:
-- **10-Row Quality Gate**: Halts immediately if $\ge 2$ of 10 sampled records fail DNS or MX checks.
-- **ESP Provider Matching**: Routes Google Workspace recipients to Google Workspace senders, and Microsoft recipients to M365 senders (6.5X deliverability boost).
-- **Anti-Burn Daily Cap**: Enforces a strict ceiling of ~10 emails/inbox/day to preserve domain reputation.
-- **Work-Done-First Copy Synthesis**: Generates subject lines with 2–3 lowercase words (`quick question`, `venue inquiry`) and avoids generic AI flattery.
+Legacy entrypoints remain: `reachy-leads`, `reachy-mcp`, `reachy-browser-test`, `reachy-browser-install`.
 
----
+## Safe operating sequence
 
-## 🔌 Step 6: Native Model Context Protocol (MCP) Integration
+1. `reachy init` and `reachy doctor`.
+2. Import or discover into a named list.
+3. `reachy list sample --list NAME --size 10 --seed 42`.
+4. Review with `reachy list review --review-id ID --incorrect ...`.
+5. Approve only if the sample meets the threshold: `reachy list approve`.
+6. Add a mock sender or a real sender with `--permitted-use-acknowledged`.
+7. Create a campaign with a policy containing `jurisdiction`, `lawful_basis`, and `policy_reviewed: true`, plus a real `--sender-identity`.
+8. Preview, approve, and start.
+9. Run with `--test-send` and `REACHY_TEST_RECIPIENT` before any live send.
+10. Inspect `reachy campaign show`, `reachy health`, and `reachy audit`.
+11. Sync replies and handle suppression/drafts.
 
-If you are running inside Cursor, Claude Desktop, or an agent platform supporting MCP, Reachy exposes its tools over `stdio`:
+Never skip the mock/test stage.
 
-### MCP Configuration Snippet:
-```json
-{
-  "mcpServers": {
-    "reachy": {
-      "command": "python3",
-      "args": ["-m", "google_maps_leads.mcp_server"],
-      "cwd": "/path/to/Reachy"
-    }
-  }
-}
-```
+## Testing
 
-### Tools exposed over MCP:
-- `scrape_leads(query: str, max_results: int = 20, enrich_contacts: bool = True)`
-- `search_and_extract(url: str)`
+- Tests live in `tests/`; run `python3 -m pytest -q`.
+- Tests use mocked providers and test recipients. They must never contact real prospects.
+- When changing database schema, add a new migration; never edit an applied migration.
+- After changes, run `python3 -m compileall -q reachy google_maps_leads leads email_outreach` and the test suite.
+- Check `reachy --version`, `reachy --help`, and any changed subcommand help.
 
----
+## Configuration
 
-## 🚨 Troubleshooting & Edge Cases
+Environment variables: `REACHY_HOME`, `REACHY_DB`, `REACHY_SECRET_KEY`, `REACHY_SECRET_KEY_PATH`, `REACHY_LOG`, `REACHY_TEST_RECIPIENT`, `REACHY_ALLOW_CATCH_ALL`, `REACHY_CATCH_ALL_PROBE`, `REACHY_RECONCILE_GRACE`, `REACHY_UNSUBSCRIBE_FOOTER`.
 
-| Symptom | Cause | Autonomous Resolution |
-| :--- | :--- | :--- |
-| `Chrome failed to start: DISPLAY not set` | Running headed on a remote server/VPS | Pass `headed=False` or check `browser_test.py` to ensure `--headless=new` flag is active. |
-| Cloudflare block on raw curl | Bot detection / JS challenge | Use `contact_enricher.py` with standard User-Agent headers, or let `scraper.py` fetch the page via the browser instance. |
-| Missing phone numbers | Business has no website | Phone numbers are extracted directly from Google Maps place panels (`data-item-id="phone"`), providing 95%+ coverage even when websites lack contact pages. |
-| Inboxes exhausted daily limit | Daily cap of 10 reached | Add additional sending inboxes to `inboxes.json` or allow F1 tire rotation to cycle into the next day's allocation. |
+Full details: `docs/CONFIGURATION.md`.
+
+## Provider notes
+
+- **Mock**: records accepted sends locally; does not transmit. Use for workflow tests.
+- **SMTP/IMAP**: STARTTLS with certificate verification; IMAP for replies. Password is encrypted.
+- **Gmail API**: official OAuth installed-app flow; scopes `gmail.send` and `gmail.readonly`; tokens encrypted; disconnect revokes.
+- No provider path automates the Gmail web UI.
+
+## Browser notes
+
+- Playwright is the supported backend; `agent-browser` is a fallback only.
+- Persistent profile: `~/.reachy/browser-profile`.
+- Never disable TLS verification or run untrusted browser binaries.
+- Reachy does not bypass CAPTCHAs or access controls. If a site blocks automation, stop.
+
+## Legacy code
+
+`email_outreach/cold_email_engine.py` is a non-sending report/simulation tool and is not the production sender. `email_outreach/inboxes.json` is intentionally empty; `inboxes.example.json` is documentation only. Use `reachy` for real delivery.
+
+## Documentation map
+
+- `docs/INSTALL.md`
+- `docs/CONFIGURATION.md`
+- `docs/SECURITY.md`
+- `docs/COMPLIANCE.md`
+- `docs/TROUBLESHOOTING.md`
+- `docs/RELEASE.md`
+- `docs/DEPENDENCY_LICENSES.md`
+- `docs/AUDIT.md` (historical audit)
+- `docs/PLAN.md` (implementation phases)
+
+## Definition of done
+
+A change is done when:
+
+- The behaviour is implemented and documented.
+- Tests pass and cover the change, including failure and safety paths.
+- No secret, real prospect data, or live send was introduced.
+- Policy/suppression guarantees are preserved.
+- `compileall` and `pytest` pass.
+- The README/AGENTS/docs remain accurate.

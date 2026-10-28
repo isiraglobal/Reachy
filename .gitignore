@@ -1,6 +1,26 @@
 __pycache__/
 *.pyc
+.pytest_cache/
+.venv/
 .agent-screenshots/
 .DS_Store
 *.log
 scratch/
+
+# Local runtime data and secrets
+.env
+*.sqlite3
+*.sqlite3-*
+secret.key
+browser-profile/
+reachy-export/
+*.egg-info/
+dist/
+build/
+
+# Generated legacy report
+final_outreach_execution_report.json
+
+# Local test suites and scratch artifacts
+tests/
+
