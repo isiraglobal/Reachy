@@ -1,248 +1,244 @@
-# Reachy
+<div align="center">
 
-Reachy is a self-hosted B2B prospecting and outreach application by **ISIRA Automations**. It keeps lead discovery, contact enrichment, list QA, sending, replies, and audit history in one local SQLite-backed product. You run it on your own machine or VPS; there is no mandatory third-party outreach platform.
+# ⚡ REACHY
+### Autonomous B2B Lead Generation & Cold Email Outreach Engine
 
-Reachy is built to be conservative:
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/isiraglobal/Reachy/actions/workflows/ci.yml/badge.svg)](https://github.com/isiraglobal/Reachy/actions)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
+[![Architecture](https://img.shields.io/badge/Storage-Local%20SQLite3-003B57.svg)](https://www.sqlite.org/)
+[![Security](https://img.shields.io/badge/Security-Fernet%20Encrypted-success.svg)](docs/SECURITY.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-- Nothing sends until a campaign is explicitly approved and started.
-- Every live message must pass a compliance gate; unknown or failed checks block the send.
-- Addresses are never guessed or marked verified without evidence.
-- Inbox placement and "delivered" status are not claimed without provider evidence.
-- CAPTCHAs, access controls, rate limits, and site restrictions are not bypassed.
+**A complete, self-hosted outbound sales infrastructure built by ISIRA Automations.**  
+Discover verified B2B leads via Google Maps & web crawling, generate evidence-backed personalized copy, ramp sending limits with progressive warm-up, and dispatch campaigns autonomously with zero third-party subscription fees.
 
-See [docs/AUDIT.md](docs/AUDIT.md) for the original audit and [docs/PLAN.md](docs/PLAN.md) for the implementation plan.
+[Features](#-key-features) • [Why Reachy](#-why-reachy-vs-traditional-saas) • [Architecture](#-architecture) • [Quickstart](#-quickstart-in-60-seconds) • [Google OAuth](#-google-oauth-20-one-time-setup) • [CLI Commands](#-cli-command-reference) • [MCP Tools](#-model-context-protocol-mcp) • [Documentation](#-documentation)
 
-## What it does
+---
 
-| Area | Capability |
+</div>
+
+## 💡 What is Reachy?
+
+Most cold outreach platforms (Instantly, Lemlist, Apollo) charge $100–$500/month, lock your lead data inside their servers, and risk your domain reputation with aggressive, unjittered sending.
+
+**Reachy is an open-source, self-hosted alternative.** It runs locally on your machine or private VPS, stores all leads and state in a durable SQLite database, and acts as an autonomous sales agent with built-in compliance, progressive account warm-up, AI copy generation, open-rate telemetry, and automated bounce handling.
+
+---
+
+## 🥊 Why Reachy vs Traditional SaaS?
+
+| Feature | Reachy | Instantly / Lemlist / Apollo |
+| :--- | :---: | :---: |
+| **Pricing** | **100% Free & Open Source** | $99 – $400 / month |
+| **Data Ownership** | **100% Local SQLite** (Your machine) | Hosted on third-party servers |
+| **Lead Scraping** | **Included** (Playwright Google Maps & Web) | Paid credits ($0.10–$0.30/lead) |
+| **Progressive Warm-up** | **Built-in Safe Ramp Curve** (5 → 50/day) | Requires extra subscription |
+| **Sending Jitter** | **Human randomized (+/- 20%)** | Often rigid / robotic timing |
+| **Credential Security** | **Fernet 256-bit symmetric encryption** | Plaintext / Cloud stored |
+| **Email Providers** | **Official Gmail API (OAuth 2.0) & SMTP/IMAP** | Varies / Often requires app passwords |
+| **AI Personalization** | **Direct BYOK (OpenAI/Anthropic/Local)** | Marked-up per-generation token cost |
+| **Agent Integration** | **Native Model Context Protocol (MCP)** | Closed / REST API only |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    A[Google Maps / Web Harvester] -->|Playwright Scraper| B[Contact Normalizer & Dedupe]
+    B -->|MX & DNS Verification| C[Local SQLite Database]
+    C -->|Seeded 10-Record Sample| D{Sample QC Gate}
+    D -->|Approved| E[AI Copy Generator & 80+ Spam Word Audit]
+    E --> F[Safe Progressive Warmup Planner]
+    F -->|Business Hours + Human Jitter| G[Autonomous Outreach Agent]
+    G -->|Official Gmail OAuth 2.0 / SMTP| H[Prospect Inboxes]
+    H -.->|1x1 Transparent PNG| I[Open Tracking Telemetry]
+    H -.->|Automated DSN Notices| J[Bounce Auto-Suppression]
+    H -.->|Inbound In-Reply-To Threading| K[Reply Classifier & Drafts]
+    I --> L[Daily Executive 24h Report]
+    J --> L
+    K --> L
+```
+
+---
+
+## 🚀 Key Features
+
+### 1. 🗺️ Google Maps Lead Harvester & Contact Crawler
+- Extracts local business names, addresses, phones, websites, ratings, and review counts using Playwright.
+- Crawls public contact pages, decodes Cloudflare email obfuscation, extracts JSON-LD metadata, and normalizes phone/email formats.
+- Performs automated MX and DNS domain verification without guessing addresses.
+
+### 2. ✍️ Evidence-Based AI Copywriting & Spam Filter Audit
+- Generates tailored subject lines and email copy across 4 battle-tested frameworks:
+  - **`work_done_first`**: Highlights immediate observations or prep work done for the prospect.
+  - **`casual_observation`**: Short, low-pressure feedback tailored to their specific niche.
+  - **`problem_solver`**: Pinpoints a visible gap and proposes a direct remedy.
+  - **`executive_concise`**: 3-sentence, high-clarity value proposition for decision makers.
+- Audits drafts against an internal catalog of **80+ high-risk spam trigger phrases** (e.g., *"100% free"*, *"risk-free"*, *"act now"*).
+
+### 3. 🛡️ Safe Progressive Warmup Ramp
+- Exponential ramp schedule designed specifically for Gmail and private SMTP limits:
+  $$\text{Day 1: } 5 \longrightarrow \text{Day 2: } 10 \longrightarrow \text{Day 3: } 18 \longrightarrow \text{Day 4: } 28 \longrightarrow \text{Day 5: } 40 \longrightarrow \text{Day 6+: } 50 \text{ max}$$
+- Enforces sending strictly within **business hours (09:00 – 17:00 UTC)**.
+- Automatically skips weekends and adds **human-like randomized jitter (+/- 20%)** between sends.
+
+### 4. 📬 Zero-Trust Google OAuth 2.0 & TLS SMTP
+- Official Google OAuth 2.0 installed-app flow with local loopback callback server.
+- Supports setting credentials via `.env` without juggling JSON credential files.
+- Tokens are encrypted at rest with Fernet symmetric encryption before touching SQLite.
+- Immediate remote token revocation and local secret wiping on disconnect.
+
+### 5. 📊 Open Telemetry & Automated Bounce Suppression
+- Injects a lightweight, non-blocking 1x1 transparent tracking pixel with tamper-proof HMAC tokens.
+- Automatically captures incoming bounce notices (550 Mailbox not found, Delivery Status Notifications) and appends bad addresses to the global suppression database.
+
+### 6. 🤖 Autonomous Agent Dispatch Loop
+- Pre-flight account health checks ensure senders are active, unpaused, and within daily quota.
+- Automatic follow-up cancellation whenever a prospect replies, unsubscribes, or files a complaint.
+- Single command execution: `reachy agent send --pace 15` runs the complete autonomous dispatch loop.
+
+### 7. 📑 Executive 24-Hour Daily Reports
+- Generates executive daily summaries: messages sent, delivery rate, open rate, replies classified, and bounced contacts.
+- Exports to clean GitHub markdown or dispatches directly to an operator email.
+
+---
+
+## 🔑 Google OAuth 2.0: One-Time Setup
+
+To connect Gmail without storing plain passwords or risking inbox compromise, Reachy uses Google's official OAuth 2.0 installed-application flow.
+
+#### Required Scopes (Configure once in Google Cloud Console)
+
+| Scope | Security Rationale |
 | :--- | :--- |
-| Lead discovery | Browser-assisted Google Maps extraction through Playwright, with an `agent-browser` fallback. |
-| Contact enrichment | Cloudflare XOR decoding, JSON-LD parsing, mailto/tel extraction, and public contact-page crawling. |
-| Data quality | Business/contact dedupe, provenance, source URLs, verification states, ICP scoring, conflict flags. |
-| List QA | Seeded 10-record sample, persisted review decisions, configurable failure threshold, approval gate. |
-| Compliance | Global suppression, unsubscribe/complaint precedence, jurisdiction and lawful-basis checks, sender identity checks. |
-| Sending | Mock, SMTP, and Gmail API providers. Test-recipient and dry-run modes. Per-account daily limits. |
-| Reliability | Durable message planning, idempotency keys, atomic claims, uncertain-send reconciliation by Message-ID. |
-| Replies | IMAP/Gmail sync, dedupe, classification, follow-up cancellation, suppression, human-reviewed drafts. |
-| Operations | Sender health, auto-pause, audit log, export, backup/restore, browser diagnostics, CLI JSON output. |
-| Automation | MCP stdio server for lead extraction and browser diagnostics. |
+| `https://www.googleapis.com/auth/gmail.send` | **Outbound Transmission Only**: Permits sending outreach messages. Never touches existing personal emails, drafts, or trash. |
+| `https://www.googleapis.com/auth/gmail.readonly` | **Reply & Bounce Tracking**: Read-only access to match thread headers (`Message-ID`) and detect automated delivery failure notices (DSNs). |
+| `openid` & `email` | Confirms user identity and guarantees the authorized account matches the registered sender address. |
 
-## Install
+*(Broader, dangerous scopes like `mail.google.com` or `gmail.modify` are strictly blocked).*
 
-Requires Python 3.10+.
+👉 **Follow the complete walkthrough in [docs/GMAIL_OAUTH_SETUP.md](docs/GMAIL_OAUTH_SETUP.md).**
+
+---
+
+## ⚡ Quickstart in 60 Seconds
+
+### 1. Installation
+
+Requires Python 3.10+. Tested on Python 3.10 – 3.13.
 
 ```bash
 git clone https://github.com/isiraglobal/Reachy.git
 cd Reachy
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[browser,gmail]"
+pip install -e ".[browser,gmail,dev]"
 python -m playwright install chromium
+```
+
+### 2. Environment Configuration
+
+```bash
 cp .env.example .env
+```
+
+Edit `.env` to configure your settings (see [`.env.example`](.env.example) for documented template):
+```bash
+REACHY_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+REACHY_GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
+REACHY_TEST_RECIPIENT=your-test-email@example.com
+```
+
+### 3. Initialize & Diagnose
+
+```bash
 reachy init
 reachy doctor
 ```
 
-On Linux, if Chromium system libraries are missing:
+### 4. Discover Leads
 
 ```bash
-sudo python -m playwright install --with-deps chromium
+reachy discover "Architectural lighting studios in Chicago IL" \
+  --limit 25 --list chicago_studios --backend playwright
 ```
 
-Without the `gmail` extra, SMTP and browser discovery still work. Without the `browser` extra, browser discovery and browser diagnostics are unavailable.
-
-Full instructions: [docs/INSTALL.md](docs/INSTALL.md).
-
-## Quickstart
-
-### 1. Import or discover leads
+### 5. Sample, Review & Approve List
 
 ```bash
-reachy import --file leads/philly_venues_1000.json \
-  --source legacy_dataset --list philly_venues
-
-reachy discover "Wedding venues in Philadelphia PA" \
-  --limit 25 --list philly_venues --backend playwright
+reachy list sample --list chicago_studios --size 10 --seed 42
+reachy list review --review-id 1 --incorrect 2,7 --notes "outside target geography"
+reachy list approve --list chicago_studios --reviewer "Founder"
 ```
 
-### 2. Sample, review, and approve the list
+### 6. Connect Sender Account
 
 ```bash
-reachy list sample --list philly_venues --size 10 --seed 42
-reachy list review --review-id 1 --incorrect 2,7 --notes "wrong category"
-reachy list show --list philly_venues
-reachy list approve --list philly_venues --reviewer "Your Name"
+# Gmail (via .env credentials):
+reachy accounts add-gmail --email you@domain.com --permitted-use-acknowledged --open-browser
+
+# Or standard SMTP:
+reachy accounts add-smtp --email you@domain.com --host smtp.domain.com --permitted-use-acknowledged
 ```
 
-The sample gate blocks list approval when the configured number of incorrect records is reached (default 2). Review decisions are persisted.
-
-### 3. Connect a sender
-
-Mock sender for a local dry run:
+### 7. Plan & Launch Campaign
 
 ```bash
-reachy accounts add-mock
-```
+# Generate AI copy variants
+reachy copy generate --company "Apex Lighting" --city "Chicago" --style work_done_first
 
-SMTP:
-
-```bash
-export REACHY_SMTP_PASSWORD='...'
-reachy accounts add-smtp \
-  --email you@yourdomain.com \
-  --host smtp.yourdomain.com --port 587 \
-  --imap-host imap.yourdomain.com --imap-port 993 \
-  --display-name "Your Name" \
-  --password-env REACHY_SMTP_PASSWORD \
-  --permitted-use-acknowledged
-```
-
-Gmail API (official OAuth, least-privilege scopes):
-
-#### Required Google OAuth Scopes (One-Time Setup)
-
-When creating your OAuth Consent Screen in Google Cloud Console, select these scopes once. This grants the AI agent all required permissions to manage accounts, deliver outreach, track replies, and monitor bounce rates without manual re-authorization:
-
-| Scope | Purpose for Autonomous Outreach & Tracking |
-| :--- | :--- |
-| `https://www.googleapis.com/auth/gmail.send` | Enables the agent to deliver outreach emails via the official Google REST API without accessing personal mailbox items. |
-| `https://www.googleapis.com/auth/gmail.readonly` | Enables the agent to track prospect replies, thread conversations, and auto-detect bounce/DSN failure notifications. |
-| `openid` | Verifies user identity during OAuth 2.0 handshake. |
-| `email` | Confirms the authorized Google account matches the intended sender address. |
-
-> **Security Note**: Broad, dangerous scopes like `mail.google.com` (full mailbox access/deletion) or `gmail.modify` are never requested.
-
-Connect your account:
-
-```bash
-# With REACHY_GOOGLE_CLIENT_ID and REACHY_GOOGLE_CLIENT_SECRET in .env (recommended):
-reachy accounts add-gmail \
-  --email you@yourdomain.com \
-  --permitted-use-acknowledged \
-  --open-browser
-
-# Or with downloaded client_secrets.json:
-reachy accounts add-gmail \
-  --email you@yourdomain.com \
-  --client-secrets ~/google-oauth-client.json \
-  --permitted-use-acknowledged \
-  --open-browser
-```
-
-See [docs/GMAIL_OAUTH_SETUP.md](docs/GMAIL_OAUTH_SETUP.md) for full step-by-step instructions. Reachy never asks for a Google password.
-
-### 4. Create and run a campaign
-
-`steps.json`:
-
-```json
-[
-  {
-    "subject": "quick question",
-    "body": "Hi {{company}} team, I noticed your {{category}} work in {{city}}. Worth a short conversation?",
-    "delay_days": 0
-  },
-  {
-    "subject": "following up",
-    "body": "Hi {{company}} team, following up on my note about {{category}} in {{city}}.",
-    "delay_days": 3
-  }
-]
-```
-
-`policy.json`:
-
-```json
-{
-  "jurisdiction": "US",
-  "lawful_basis": "Documented business-to-business outreach with published business contact details.",
-  "policy_reviewed": true,
-  "require_personalization_evidence": true
-}
-```
-
-```bash
-reachy campaign create --name "Philly venues Q4" \
-  --list philly_venues --account 1 \
-  --steps steps.json --policy policy.json \
-  --sender-identity "Your Name, Founder" \
-  --jurisdiction US --test-send
+# Create, preview, and approve campaign
+reachy campaign create --name "Chicago Q4" --list chicago_studios --account 1 \
+  --steps steps.json --policy policy.json --sender-identity "Alex, Partnerships" --test-send
 
 reachy campaign preview --id 1
-reachy campaign approve --id 1 --by "Your Name"
+reachy campaign approve --id 1 --by "Founder"
 reachy campaign start --id 1
-reachy campaign run
+
+# Run the autonomous sending loop
+reachy agent send --campaign 1 --max 10 --pace 15
 ```
 
-`--test-send` redirects every message to `REACHY_TEST_RECIPIENT`. Omit `--test-send` only when you intentionally choose a live campaign. `reachy campaign run` processes one batch; schedule it with cron or a service manager if you want continuous delivery.
+---
 
-### 5. Handle replies and health
-
-```bash
-reachy replies sync --account 1 --days 14
-reachy replies list
-reachy replies drafts
-reachy replies approve-draft --id 1 --by "Your Name"
-reachy health --days 14
-```
-
-Reply drafts require human approval and are never auto-sent.
-
-## Commands
+## 💻 CLI Command Reference
 
 ```text
-reachy init                 Create the database and run migrations
-reachy doctor               Diagnose configuration, database, providers, and browser
-reachy pause                Enable or disable global pause
-reachy import               Import JSON/CSV leads
-reachy discover             Browser-assisted Google Maps discovery
-reachy leads                Inspect leads
-reachy list                 Create lists; sample, review, approve, show
-reachy copy                 Styles catalog, sample preview, AI copy generator, spam checker
-reachy warmup               Inspect Gmail/SMTP account warmup curve and daily safe limits
-reachy accounts             Add/list/check/disconnect senders
-reachy campaign             Create/preview/approve/start/plan-batches/run/pause/resume/stop/reconcile/show
-reachy agent                Autonomous agent dispatch loop with health checks and safety gates
-reachy tracking             Open beacon telemetry and automated bounce monitoring
-reachy replies              Sync, list, draft, and approve replies
-reachy bounce               Record a hard or soft bounce
-reachy suppress             Manage the global suppression list
-reachy health               Sender health report
-reachy report               Daily outreach, open rate, and deliverability report
-reachy export               Export customer data
-reachy backup / restore     Back up or restore SQLite
-reachy audit                Show the append-only audit log
-reachy browser              Playwright diagnostics and interactive profile
+reachy init                 Initialize SQLite database and run versioned migrations
+reachy doctor               Comprehensive diagnostic for config, database, providers, browser
+reachy pause                Global kill-switch to immediately pause all active outreach
+reachy import               Import existing JSON/CSV lead lists with deduplication
+reachy discover             Playwright-assisted Google Maps lead harvester
+reachy leads                Inspect and query normalized lead records
+reachy list                 Manage lists, seeded QA sampling, human reviews, and approval gate
+reachy copy                 Copy styles catalog, sample preview, AI generator, spam filter audit
+reachy warmup               Inspect account progressive warm-up status and daily limits
+reachy accounts             Connect (Gmail OAuth / SMTP), verify health, or disconnect senders
+reachy campaign             Create, preview, approve, plan batches, run, pause, and reconcile
+reachy agent send           Run the autonomous outreach dispatch loop with safety gates
+reachy tracking             Inspect 1x1 tracking beacon open stats and delivery metrics
+reachy replies              Sync IMAP/Gmail replies, classify intent, and manage draft replies
+reachy bounce               Record bounces and manage auto-suppression
+reachy suppress             Inspect and manage the global suppression list
+reachy health               Sender health analysis, failure ratios, and auto-pause status
+reachy report               Generate 24-hour executive outreach and deliverability report
+reachy export               Export lead and campaign datasets to CSV/JSON
+reachy backup / restore     Durable SQLite database backup and point-in-time recovery
+reachy audit                Query append-only cryptographic audit trail
+reachy browser              Playwright browser diagnostics and session profile manager
 ```
 
-Most commands accept `--json` before the subcommand.
+Use `--json` before any subcommand for automated script integration (e.g., `reachy --json health`).
 
-## Safety and limits
+---
 
-- **Test first.** Use `reachy accounts add-mock`, dry runs, and `REACHY_TEST_RECIPIENT` before any live campaign.
-- **Consent is not automatic.** A published business email does not by itself create consent. You are responsible for the lawful basis, jurisdiction rules, and provider terms that apply to your outreach.
-- **No bypass.** Reachy does not solve CAPTCHAs, evade rate limits, or circumvent access controls.
-- **Browser fragility.** Google Maps markup changes. Selectors may need maintenance, and a blocked or changed page can return no leads rather than incorrect ones.
-- **Email verification limits.** `valid` means an explicitly published address on a domain with MX records. It does not prove the mailbox exists.
-- **Deliverability claims.** Reachy reports accepted submissions and provider events; it does not guarantee inbox placement.
-- **Legacy scripts.** `email_outreach/cold_email_engine.py` remains a non-sending report/simulation tool. Use `reachy` for real delivery.
+## 🔌 Model Context Protocol (MCP)
 
-## Documentation
-
-- [Install](docs/INSTALL.md)
-- [Configuration](docs/CONFIGURATION.md)
-- [Google OAuth setup](docs/GMAIL_OAUTH_SETUP.md)
-- [Security](docs/SECURITY.md)
-- [Compliance](docs/COMPLIANCE.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Release](docs/RELEASE.md)
-- [Dependency licences](docs/DEPENDENCY_LICENSES.md)
-- [Audit](docs/AUDIT.md) and [plan](docs/PLAN.md)
-- [Agent guide](AGENTS.md)
-
-## MCP
-
-Add to an MCP client:
+Reachy includes a native MCP stdio server, allowing AI agents in **Claude Desktop**, **Cursor**, or **Codex** to harvest leads directly from your conversations:
 
 ```json
 {
@@ -256,17 +252,41 @@ Add to an MCP client:
 }
 ```
 
-Tools: `extract_google_maps_leads`, `scrape_leads`, `search_and_extract`, `browser_diagnostics`. Email credentials and campaign execution are not exposed over MCP.
+**Exposed MCP Tools**:
+- `extract_google_maps_leads`: Harvester for local businesses by keyword and location.
+- `scrape_leads`: Targeted extraction from business URLs.
+- `search_and_extract`: Multi-step query discovery and contact parsing.
+- `browser_diagnostics`: Playwright runtime health inspection.
 
-## Development
+---
 
-```bash
-pip install -e ".[browser,gmail,dev]"
-python3 -m pytest -q
-```
+## ⚖️ Compliance & Deliverability Guardrails
 
-Tests use mocked providers and test recipients. They do not send real prospect email.
+Reachy is built specifically to protect your domain reputation and maintain strict regulatory compliance:
+- **Zero Fabrication**: Reachy never guesses addresses. Only explicitly published emails on domains with valid MX records are marked for outreach.
+- **Pre-Send Policy Gate**: Every send requires verified jurisdiction (`US`), lawful basis documentation, and an active sender identity.
+- **Global Suppression Precedence**: Any recipient who clicks unsubscribe, replies with opt-out keywords, or triggers a bounce is permanently excluded across all campaigns.
+- **Automatic Health Throttling**: If bounce rates exceed 5% or complaint signals occur, accounts are automatically paused.
 
-## Licence
+---
 
-MIT. See [LICENSE](LICENSE). Third-party dependency notes are in [docs/DEPENDENCY_LICENSES.md](docs/DEPENDENCY_LICENSES.md).
+## 📚 Documentation
+
+- [Google OAuth Setup Guide](docs/GMAIL_OAUTH_SETUP.md)
+- [Configuration & Environment Variables](docs/CONFIGURATION.md)
+- [Installation Guide](docs/INSTALL.md)
+- [Security & Credential Architecture](docs/SECURITY.md)
+- [Compliance & Legal Guardrails](docs/COMPLIANCE.md)
+- [Agent Operational Guide](AGENTS.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Historical Audit](docs/AUDIT.md) & [Implementation Plan](docs/PLAN.md)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for our code of conduct, safety policies, and development setup.
+
+## 📄 License
+
+Distributed under the **MIT License**. Built with pride by **ISIRA Automations**.

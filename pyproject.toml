@@ -12,12 +12,21 @@ authors = [
 ]
 keywords = [
     "lead-generation",
-    "google-maps-scraper",
     "cold-email",
     "email-outreach",
+    "sales-automation",
+    "ai-agent",
+    "autonomous-agent",
+    "email-warmup",
+    "google-maps-scraper",
     "b2b-leads",
+    "prospecting",
+    "gmail-api",
     "enrichment",
     "mcp",
+    "mcp-server",
+    "playwright",
+    "growth-hacking",
     "isira-automations"
 ]
 license = { text = "MIT" }
