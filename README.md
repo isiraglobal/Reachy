@@ -121,6 +121,8 @@ To connect Gmail without storing plain passwords or risking inbox compromise, Re
 
 *(Broader, dangerous scopes like `mail.google.com` or `gmail.modify` are strictly blocked).*
 
+> **Desktop App vs Client ID**: When Google Cloud Console prompts for **Application type**, select **Desktop app**. A "Desktop app" credential **is** an OAuth 2.0 Client ID. Google mandates this type for local CLI applications using localhost loopbacks.
+
 👉 **Follow the complete walkthrough in [docs/GMAIL_OAUTH_SETUP.md](docs/GMAIL_OAUTH_SETUP.md).**
 
 ---
@@ -148,8 +150,8 @@ cp .env.example .env
 
 Edit `.env` to configure your settings (see [`.env.example`](.env.example) for documented template):
 ```bash
-REACHY_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-REACHY_GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
+REACHY_GOOGLE_CLIENT_ID=your-desktop-client-id.apps.googleusercontent.com
+REACHY_GOOGLE_CLIENT_SECRET=GOCSPX-your-desktop-secret
 REACHY_TEST_RECIPIENT=your-test-email@example.com
 ```
 

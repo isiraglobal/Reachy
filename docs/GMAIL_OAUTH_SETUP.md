@@ -81,6 +81,10 @@ Click **Add or Remove Scopes**. Select only the following four scopes:
 5. Click **Create**.
 6. A dialog displays your **Client ID** and **Client Secret**.
 
+> [!TIP]
+> **Will a "Desktop app" ID work, or do I need a different Client ID?**  
+> **Yes, "Desktop app" is exactly what you need.** In Google Cloud Console, a "Desktop app" credential **is** an OAuth 2.0 Client ID. Reachy runs locally as a Python application and uses a local loopback server (`http://localhost`) to receive the OAuth redirect code. Under RFC 8252, Google strictly mandates the **Desktop app** type for localhost redirects. Never select "Web application", as web applications require verified public HTTPS domains and will reject localhost.
+
 Copy these directly into your `.env`:
 ```bash
 REACHY_GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com

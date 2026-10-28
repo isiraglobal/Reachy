@@ -54,7 +54,7 @@ TLS is required. Reachy uses STARTTLS where advertised (and on port 587) and ver
 ### Gmail API
 
 Required: `--email`. Credentials can be supplied either:
-1. Via `.env` with `REACHY_GOOGLE_CLIENT_ID` and `REACHY_GOOGLE_CLIENT_SECRET` (recommended).
+1. Via `.env` with `REACHY_GOOGLE_CLIENT_ID` and `REACHY_GOOGLE_CLIENT_SECRET` (from a Google Cloud "Desktop app" credential).
 2. Via CLI flags `--client-id` and `--client-secret`.
 3. Via `--client-secrets /path/to/credentials.json`.
 
