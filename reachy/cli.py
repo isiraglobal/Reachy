@@ -128,6 +128,14 @@ def _parser() -> argparse.ArgumentParser:
     imp.add_argument("--query", help="Original discovery query")
     imp.add_argument("--icp", help="ICP profile name")
     imp.add_argument("--no-verify", action="store_true")
+    imp.add_argument("--tag", action="append", default=[], dest="tags")
+    imp.add_argument("--tags", dest="tags_csv", help="Comma-separated tags")
+    imp.add_argument("--run", dest="run")
+    imp.add_argument("--run-id", dest="run_id")
+    imp.add_argument("--run-name", dest="run_name")
+    imp.add_argument("--task", dest="task")
+    imp.add_argument("--task-id", dest="task_id")
+    imp.add_argument("--task-name", dest="task_name")
 
     disc = sub.add_parser("discover", help="Run browser-assisted Google Maps discovery")
     disc.add_argument("query")
@@ -138,12 +146,25 @@ def _parser() -> argparse.ArgumentParser:
     disc.add_argument("--backend", default="auto", choices=["auto", "playwright", "agent-browser"])
     disc.add_argument("--no-enrich", action="store_true")
     disc.add_argument("--no-verify", action="store_true")
+    disc.add_argument("--tag", action="append", default=[], dest="tags")
+    disc.add_argument("--tags", dest="tags_csv", help="Comma-separated tags")
+    disc.add_argument("--run", dest="run")
+    disc.add_argument("--run-id", dest="run_id")
+    disc.add_argument("--run-name", dest="run_name")
+    disc.add_argument("--task", dest="task")
+    disc.add_argument("--task-id", dest="task_id")
+    disc.add_argument("--task-name", dest="task_name")
 
     leads = sub.add_parser("leads", help="Inspect leads")
     leads_sub = leads.add_subparsers(dest="leads_command", required=True)
     leads_list = leads_sub.add_parser("list")
     leads_list.add_argument("--list", dest="list_name")
     leads_list.add_argument("--limit", type=int, default=50)
+    leads_list.add_argument("--tag", action="append", default=[], dest="tags")
+    leads_list.add_argument("--tags", dest="tags_csv", help="Comma-separated tags")
+    leads_list.add_argument("--task", dest="task")
+    leads_list.add_argument("--run", dest="run")
+    leads_list.add_argument("--run-id", dest="run_id")
 
     listing = sub.add_parser("list", help="Manage lead lists and sample QC")
     listing_sub = listing.add_subparsers(dest="list_command", required=True)
@@ -474,6 +495,10 @@ def _resolve_icp(db: Database, name: Optional[str]):
 def _import(args, config: ReachyConfig, db: Database) -> int:
     icp_id, icp = _resolve_icp(db, args.icp)
     policy = VerificationPolicy(allow_catch_all=config.allow_catch_all, smtp_probe_enabled=config.catch_all_probe_enabled)
+    combined_tags = list(getattr(args, "tags", []) or [])
+    tags_csv = getattr(args, "tags_csv", None)
+    if tags_csv:
+        combined_tags.extend(part.strip() for part in tags_csv.split(",") if part.strip())
     stats = import_file(
         db,
         args.file,
@@ -485,6 +510,13 @@ def _import(args, config: ReachyConfig, db: Database) -> int:
         verify=not args.no_verify,
         dns_backend=DnspythonBackend() if not args.no_verify else None,
         verification_policy=policy,
+        tags=combined_tags,
+        run=getattr(args, "run", None),
+        run_id=getattr(args, "run_id", None),
+        run_name=getattr(args, "run_name", None),
+        task=getattr(args, "task", None),
+        task_id=getattr(args, "task_id", None),
+        task_name=getattr(args, "task_name", None),
     )
     _out(args, {"ok": True, **stats})
     return 0
@@ -498,6 +530,10 @@ def _discover(args, config: ReachyConfig, db: Database) -> int:
     from .ingest import import_records
 
     policy = VerificationPolicy(allow_catch_all=config.allow_catch_all, smtp_probe_enabled=config.catch_all_probe_enabled)
+    combined_tags = list(getattr(args, "tags", []) or [])
+    tags_csv = getattr(args, "tags_csv", None)
+    if tags_csv:
+        combined_tags.extend(part.strip() for part in tags_csv.split(",") if part.strip())
     stats = import_records(
         db,
         records,
@@ -509,30 +545,45 @@ def _discover(args, config: ReachyConfig, db: Database) -> int:
         verify=not args.no_verify,
         dns_backend=DnspythonBackend() if not args.no_verify else None,
         verification_policy=policy,
+        tags=combined_tags,
+        run=getattr(args, "run", None),
+        run_id=getattr(args, "run_id", None),
+        run_name=getattr(args, "run_name", None),
+        task=getattr(args, "task", None),
+        task_id=getattr(args, "task_id", None),
+        task_name=getattr(args, "task_name", None),
     )
     _out(args, {"ok": True, **stats})
     return 0
 
 
 def _leads(args, db: Database) -> int:
-    if args.list_name:
-        rows = db.fetchall(
-            """SELECT l.id, l.name, l.category, l.city, l.state, l.website, l.phone,
-                      l.qualification_score, l.qualification_reason, l.flags_json,
-                      c.email, c.verification_status
-               FROM leads l JOIN list_leads ll ON ll.lead_id=l.id
-               LEFT JOIN contacts c ON c.lead_id=l.id AND c.is_primary=1
-               WHERE ll.list_id=(SELECT id FROM lists WHERE name=?)
-               ORDER BY l.qualification_score DESC, l.id LIMIT ?""",
-            (args.list_name, args.limit),
+    from .normalize import query_leads
+
+    combined_tags = list(getattr(args, "tags", []) or [])
+    tags_csv = getattr(args, "tags_csv", None)
+    if tags_csv:
+        combined_tags.extend(part.strip() for part in tags_csv.split(",") if part.strip())
+
+    if getattr(args, "list_name", None) or combined_tags or getattr(args, "task", None) or getattr(args, "run", None) or getattr(args, "run_id", None):
+        rows = query_leads(
+            db,
+            list_name=getattr(args, "list_name", None),
+            tags=combined_tags if combined_tags else None,
+            task=getattr(args, "task", None),
+            run=getattr(args, "run", None) or getattr(args, "run_id", None),
+            limit=args.limit,
         )
-    else:
-        rows = db.fetchall(
-            """SELECT l.*, c.email, c.verification_status FROM leads l
-               LEFT JOIN contacts c ON c.lead_id=l.id AND c.is_primary=1
-               ORDER BY l.id DESC LIMIT ?""",
-            (args.limit,),
-        )
+        # query_leads returns dicts already; normalize to include contact info (already included)
+        _out(args, rows)
+        return 0
+
+    rows = db.fetchall(
+        """SELECT l.*, c.email, c.verification_status FROM leads l
+           LEFT JOIN contacts c ON c.lead_id=l.id AND c.is_primary=1
+           ORDER BY l.id DESC LIMIT ?""",
+        (args.limit,),
+    )
     _out(args, [dict(row) for row in rows])
     return 0
 

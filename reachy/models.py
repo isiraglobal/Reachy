@@ -41,6 +41,13 @@ class NormalizedLead:
     source_url: Optional[str] = None
     source_query: Optional[str] = None
     flags: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    run_id: Optional[str] = None
+    run: Optional[str] = None
+    run_name: Optional[str] = None
+    task_id: Optional[str] = None
+    task: Optional[str] = None
+    task_name: Optional[str] = None
 
 
 @dataclass

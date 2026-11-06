@@ -58,6 +58,15 @@ def import_records(
     dns_backend: Optional[DNSBackend] = None,
     verification_policy: Optional[VerificationPolicy] = None,
     actor: str = "import",
+    *,
+    tags: Any = None,
+    run: Any = None,
+    run_id: Any = None,
+    run_name: Any = None,
+    task: Any = None,
+    task_id: Any = None,
+    task_name: Any = None,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     list_id = ensure_list(db, list_name, icp_profile_id)
     stats = {
@@ -71,7 +80,20 @@ def import_records(
     }
     for raw in records:
         try:
-            lead_id, created = ingest_lead(db, raw, source=source, source_query=source_query, actor=actor)
+            lead_id, created = ingest_lead(
+                db,
+                raw,
+                source=source,
+                source_query=source_query,
+                actor=actor,
+                tags=tags,
+                run=run,
+                run_id=run_id,
+                run_name=run_name,
+                task=task,
+                task_id=task_id,
+                task_name=task_name,
+            )
         except Exception as exc:  # noqa: BLE001
             stats["errors"].append({"record": raw.get("title") or raw.get("name"), "error": str(exc)})
             continue

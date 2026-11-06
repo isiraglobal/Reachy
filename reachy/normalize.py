@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import urlparse
@@ -138,11 +139,37 @@ def parse_location(raw: dict[str, Any]) -> tuple[Optional[str], Optional[str], O
     return city, (state.upper() if state else None), country
 
 
+def _normalize_tags(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        parts = [part.strip() for part in value.split(",")]
+    elif isinstance(value, (list, tuple, set)):
+        parts = [str(part).strip() for part in value]
+    else:
+        parts = [str(value).strip()]
+    result: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        if part and part not in seen:
+            seen.add(part)
+            result.append(part)
+    return result
+
+
 def normalize_lead(
     raw: dict[str, Any],
     source: str,
     source_query: Optional[str] = None,
     discovered_at: Optional[str] = None,
+    *,
+    tags: Any = None,
+    run: Any = None,
+    run_id: Any = None,
+    run_name: Any = None,
+    task: Any = None,
+    task_id: Any = None,
+    task_name: Any = None,
 ) -> dict[str, Any]:
     name = clean_text(raw.get("title") or raw.get("name"))
     if not name:
@@ -163,6 +190,20 @@ def normalize_lead(
     if not (city and state):
         flags.append("incomplete_location")
 
+    run_value = run_id if run_id is not None else (run if run is not None else run_name)
+    run_name_value = run_name if run_name is not None else run_value
+    run_field_value = run if run is not None else run_value
+    task_value = task_id if task_id is not None else (task if task is not None else task_name)
+    task_name_value = task_name if task_name is not None else task_value
+    task_field_value = task if task is not None else task_value
+
+    tag_values = _normalize_tags(tags)
+    for value in (run_value, task_value):
+        if value is not None:
+            text = str(value).strip()
+            if text and text not in tag_values:
+                tag_values.append(text)
+
     return {
         "name": name,
         "category": clean_text(raw.get("category")),
@@ -182,6 +223,13 @@ def normalize_lead(
         "raw_json": json.dumps(raw, sort_keys=True, default=str),
         "dedupe_key": business_dedupe_key(raw),
         "flags_json": json.dumps(sorted(set(flags))),
+        "run_id": run_value,
+        "run": run_field_value,
+        "run_name": run_name_value,
+        "task_id": task_value,
+        "task": task_field_value,
+        "task_name": task_name_value,
+        "tags": json.dumps(tag_values),
     }
 
 
@@ -208,19 +256,61 @@ def ingest_lead(
     raw: dict[str, Any],
     source: str,
     source_query: Optional[str] = None,
+    discovered_at: Optional[str] = None,
     actor: str = "import",
+    *,
+    tags: Any = None,
+    run: Any = None,
+    run_id: Any = None,
+    run_name: Any = None,
+    task: Any = None,
+    task_id: Any = None,
+    task_name: Any = None,
+    **kwargs: Any,
 ) -> tuple[int, bool]:
-    """Insert or merge a lead. Returns (lead_id, created)."""
-    normalized = normalize_lead(raw, source=source, source_query=source_query)
+    """Insert or merge a lead. Returns (lead_id, created).
+
+    Deduplication is hard-wired by ``dedupe_key``: a matching business is
+    never inserted twice. Run/task/tag provenance is merged onto the existing
+    record instead.
+    """
+    normalized = normalize_lead(
+        raw,
+        source=source,
+        source_query=source_query,
+        discovered_at=discovered_at,
+        tags=tags,
+        run=run,
+        run_id=run_id,
+        run_name=run_name,
+        task=task,
+        task_id=task_id,
+        task_name=task_name,
+    )
     existing = db.fetchone(
         "SELECT id, raw_json FROM leads WHERE dedupe_key = ?", (normalized["dedupe_key"],)
     )
     now = utcnow()
+    alias_fields = ["run_id", "run", "run_name", "task_id", "task", "task_name"]
     if existing:
         lead_id = int(existing["id"])
         merge_fields = ["category", "rating", "reviews_count", "phone", "website", "address", "city", "state", "country", "employee_count"]
         current = db.fetchone("SELECT * FROM leads WHERE id = ?", (lead_id,))
         updates = {f: normalized[f] for f in merge_fields if normalized.get(f) is not None and not current[f]}
+        try:
+            current_tags = json.loads(current["tags"] or "[]")
+        except (TypeError, ValueError):
+            current_tags = []
+        new_tags = json.loads(normalized["tags"] or "[]")
+        merged_tags = list(current_tags)
+        for tag in new_tags:
+            if tag not in merged_tags:
+                merged_tags.append(tag)
+        if merged_tags != current_tags:
+            updates["tags"] = json.dumps(merged_tags)
+        for field in alias_fields:
+            if normalized.get(field) is not None and not current[field]:
+                updates[field] = normalized[field]
         if updates:
             assignments = ", ".join(f"{field} = ?" for field in updates)
             db.execute(
@@ -235,8 +325,9 @@ def ingest_lead(
                dedupe_key, name, category, rating, reviews_count, phone, website,
                address, city, state, country, employee_count, source, source_url,
                source_query, discovered_at, raw_json, normalized_at, flags_json,
+               run_id, run, run_name, task_id, task, task_name, tags,
                created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             normalized["dedupe_key"], normalized["name"], normalized["category"],
             normalized["rating"], normalized["reviews_count"], normalized["phone"],
@@ -244,7 +335,10 @@ def ingest_lead(
             normalized["state"], normalized["country"], normalized["employee_count"],
             normalized["source"], normalized["source_url"], normalized["source_query"],
             normalized["discovered_at"], normalized["raw_json"], now,
-            normalized["flags_json"], now, now,
+            normalized["flags_json"],
+            normalized["run_id"], normalized["run"], normalized["run_name"],
+            normalized["task_id"], normalized["task"], normalized["task_name"],
+            normalized["tags"], now, now,
         ),
     )
     db.audit(actor, "lead.created", "lead", lead_id, {"source": source})
@@ -291,6 +385,125 @@ def ingest_contact(
     )
     db.audit(actor, "contact.created", "contact", contact_id, {"discovery_method": discovery_method})
     return contact_id, True
+
+
+def _rows_to_dicts(rows: Iterable[sqlite3.Row]) -> list[dict[str, Any]]:
+    return [dict(row) for row in rows]
+
+
+def query_leads(
+    db: Database,
+    *,
+    tag: Any = None,
+    tags: Any = None,
+    task: Any = None,
+    task_id: Any = None,
+    task_name: Any = None,
+    run: Any = None,
+    run_id: Any = None,
+    run_name: Any = None,
+    list_name: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+    **kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Query leads from the single database with run/task/tag separation."""
+    tag_values: list[str] = []
+    if tag is not None:
+        tag_values.append(str(tag))
+    if tags is not None:
+        if isinstance(tags, str):
+            tag_values.extend(part.strip() for part in tags.split(",") if part.strip())
+        elif isinstance(tags, (list, tuple, set)):
+            tag_values.extend(str(part).strip() for part in tags if str(part).strip())
+        else:
+            tag_values.append(str(tags).strip())
+
+    task_values = [str(v) for v in (task, task_id, task_name, kwargs.get("task")) if v is not None]
+    run_values = [str(v) for v in (run, run_id, run_name, kwargs.get("run")) if v is not None]
+
+    conditions: list[str] = []
+    params: list[Any] = []
+
+    if tag_values:
+        tag_conditions = []
+        for value in tag_values:
+            tag_conditions.append("l.tags LIKE ?")
+            params.append(f'%"{value}"%')
+        # Fall back to substring match for tags stored without JSON quoting.
+        for value in tag_values:
+            tag_conditions.append("l.tags LIKE ?")
+            params.append(f"%{value}%")
+        conditions.append("(" + " OR ".join(tag_conditions) + ")")
+
+    if task_values:
+        task_conditions = []
+        for value in task_values:
+            task_conditions.append("l.task = ?")
+            params.append(value)
+            task_conditions.append("l.task_id = ?")
+            params.append(value)
+            task_conditions.append("l.task_name = ?")
+            params.append(value)
+            task_conditions.append("l.tags LIKE ?")
+            params.append(f"%{value}%")
+        conditions.append("(" + " OR ".join(task_conditions) + ")")
+
+    if run_values:
+        run_conditions = []
+        for value in run_values:
+            run_conditions.append("l.run = ?")
+            params.append(value)
+            run_conditions.append("l.run_id = ?")
+            params.append(value)
+            run_conditions.append("l.run_name = ?")
+            params.append(value)
+            run_conditions.append("l.tags LIKE ?")
+            params.append(f"%{value}%")
+        conditions.append("(" + " OR ".join(run_conditions) + ")")
+
+    if list_name is not None:
+        conditions.append("ll.list_id = (SELECT id FROM lists WHERE name = ?)")
+        params.append(list_name)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    join = "JOIN list_leads ll ON ll.lead_id = l.id" if list_name is not None else "LEFT JOIN list_leads ll ON ll.lead_id = l.id"
+    sql = f"""
+        SELECT DISTINCT l.*, c.email, c.verification_status
+        FROM leads l
+        {join}
+        LEFT JOIN contacts c ON c.lead_id = l.id AND c.is_primary = 1
+        {where}
+        ORDER BY l.id DESC
+        LIMIT ? OFFSET ?
+    """
+    params.extend([limit, offset])
+    rows = db.fetchall(sql, params)
+    return [dict(row) for row in rows]
+
+
+def get_leads(db: Database, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    return query_leads(db, *args, **kwargs)
+
+
+def list_leads(db: Database, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    return query_leads(db, *args, **kwargs)
+
+
+def search_leads(db: Database, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    return query_leads(db, *args, **kwargs)
+
+
+def leads_by_tag(db: Database, tag: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    return query_leads(db, tag=tag, **kwargs)
+
+
+def leads_for_task(db: Database, task: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    return query_leads(db, task=task, **kwargs)
+
+
+def leads_for_run(db: Database, run: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    return query_leads(db, run=run, **kwargs)
 
 
 def lead_contacts(raw: dict[str, Any]) -> list[tuple[str, str]]:
