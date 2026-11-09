@@ -17,6 +17,10 @@ reachy-export/
 *.egg-info/
 dist/
 build/
+outputs/
+output/
+output-runs/
+processing/
 
 # Generated legacy report
 final_outreach_execution_report.json

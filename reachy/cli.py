@@ -154,6 +154,7 @@ def _parser() -> argparse.ArgumentParser:
     disc.add_argument("--task", dest="task")
     disc.add_argument("--task-id", dest="task_id")
     disc.add_argument("--task-name", dest="task_name")
+    disc.add_argument("--csv", dest="csv_path", nargs="?", const="DEFAULT", help="Export leads directly to CSV (default: outputs/<list>.csv)")
 
     leads = sub.add_parser("leads", help="Inspect leads")
     leads_sub = leads.add_subparsers(dest="leads_command", required=True)
@@ -165,6 +166,17 @@ def _parser() -> argparse.ArgumentParser:
     leads_list.add_argument("--task", dest="task")
     leads_list.add_argument("--run", dest="run")
     leads_list.add_argument("--run-id", dest="run_id")
+
+    leads_export = leads_sub.add_parser("export", help="Export leads to CSV")
+    leads_export.add_argument("--list", dest="list_name")
+    leads_export.add_argument("--out", "-o", dest="out", help="Output CSV path (default: outputs/<list>.csv)")
+    leads_export.add_argument("--format", choices=["csv"], default="csv", help="Export format (default: csv)")
+    leads_export.add_argument("--limit", type=int, default=0, help="Maximum leads to export (default: all)")
+    leads_export.add_argument("--tag", action="append", default=[], dest="tags")
+    leads_export.add_argument("--tags", dest="tags_csv", help="Comma-separated tags")
+    leads_export.add_argument("--task", dest="task")
+    leads_export.add_argument("--run", dest="run")
+    leads_export.add_argument("--run-id", dest="run_id")
 
     listing = sub.add_parser("list", help="Manage lead lists and sample QC")
     listing_sub = listing.add_subparsers(dest="list_command", required=True)
@@ -297,6 +309,8 @@ def _parser() -> argparse.ArgumentParser:
 
     export = sub.add_parser("export", help="Export customer data")
     export.add_argument("--out", required=True)
+    export.add_argument("--format", choices=["json", "csv"], default="json", help="Export format (json or csv)")
+    export.add_argument("--list", dest="list_name", help="Filter leads by list name when exporting to CSV")
     backup = sub.add_parser("backup", help="Back up the database")
     backup.add_argument("--out", required=True)
     restore = sub.add_parser("restore", help="Restore a database backup")
@@ -367,6 +381,30 @@ def _parser() -> argparse.ArgumentParser:
     rep_daily.add_argument("--email", help="Email report to this address")
     rep_daily.add_argument("--markdown", action="store_true", help="Print Markdown output")
 
+    # Autonomous Lead Jobs & Batch Discovery
+    job = sub.add_parser("job", help="Autonomous lead jobs and batch runners for AI agents")
+    job_sub = job.add_subparsers(dest="job_command", required=True)
+    j_disc = job_sub.add_parser("discover", help="Run single or multi-query discovery directly to CSV")
+    j_disc.add_argument("-q", "--query", action="append", default=[], dest="queries", help="Search query (repeat for multiple)")
+    j_disc.add_argument("--queries-file", help="File with queries (one per line)")
+    j_disc.add_argument("--queries-str", help="Semicolon or comma-separated queries")
+    j_disc.add_argument("--limit", type=int, default=20, help="Max leads per query (default: 20)")
+    j_disc.add_argument("--list", dest="list_name", required=True, help="Target list name in database")
+    j_disc.add_argument("--csv", "-o", "--out", dest="csv_path", help="Output CSV path (default: outputs/<list>.csv)")
+    j_disc.add_argument("--headed", action="store_true", help="Run browser in headed mode")
+    j_disc.add_argument("--backend", default="auto", choices=["auto", "playwright", "agent-browser"])
+    j_disc.add_argument("--no-enrich", action="store_true", help="Skip website contact enrichment")
+    j_disc.add_argument("--no-verify", action="store_true", help="Skip DNS/email verification")
+    j_disc.add_argument("--tag", action="append", default=[], dest="tags")
+    j_disc.add_argument("--tags", dest="tags_csv", help="Comma-separated tags")
+    j_disc.add_argument("--task", dest="task_id")
+    j_disc.add_argument("--run", dest="run_id")
+    j_disc.add_argument("--no-clean", action="store_true", help="Do not auto-clean temporary files")
+
+    # Workspace cleaner
+    clean = sub.add_parser("clean", help="Clean scratch files, temporary JSONs, and cache artifacts")
+    clean.add_argument("--dry-run", action="store_true", help="List files to remove without deleting")
+
     return parser
 
 
@@ -436,6 +474,10 @@ def _dispatch(args, config: ReachyConfig, db: Database) -> int:
         return _agent(args, config, db)
     if args.command == "report":
         return _report(args, config, db)
+    if args.command == "job":
+        return _job(args, config, db)
+    if args.command == "clean":
+        return _clean(args)
     return 1
 
 
@@ -553,11 +595,34 @@ def _discover(args, config: ReachyConfig, db: Database) -> int:
         task_id=getattr(args, "task_id", None),
         task_name=getattr(args, "task_name", None),
     )
+    if getattr(args, "csv_path", None) is not None:
+        from .jobs import export_list_to_csv
+        dest, count = export_list_to_csv(db, list_name=args.list_name, filepath=args.csv_path)
+        stats["csv_export"] = str(dest)
+        stats["csv_total_leads"] = count
     _out(args, {"ok": True, **stats})
     return 0
 
 
 def _leads(args, db: Database) -> int:
+    if getattr(args, "leads_command", None) == "export":
+        from .jobs import export_list_to_csv
+        combined_tags = list(getattr(args, "tags", []) or [])
+        tags_csv = getattr(args, "tags_csv", None)
+        if tags_csv:
+            combined_tags.extend(part.strip() for part in tags_csv.split(",") if part.strip())
+        dest, count = export_list_to_csv(
+            db,
+            list_name=getattr(args, "list_name", None),
+            filepath=getattr(args, "out", None),
+            limit=getattr(args, "limit", 0),
+            tags=combined_tags or None,
+            task=getattr(args, "task", None),
+            run=getattr(args, "run", None) or getattr(args, "run_id", None),
+        )
+        _out(args, {"ok": True, "export": str(dest), "total_leads": count})
+        return 0
+
     from .normalize import query_leads
 
     combined_tags = list(getattr(args, "tags", []) or [])
@@ -1008,6 +1073,12 @@ def _report(args, config: ReachyConfig, db: Database) -> int:
 
 
 def _export(args, db: Database) -> int:
+    if getattr(args, "format", "json") == "csv":
+        from .jobs import export_list_to_csv
+        dest, count = export_list_to_csv(db, list_name=getattr(args, "list_name", None), filepath=args.out)
+        _out(args, {"ok": True, "format": "csv", "export": str(dest), "total_leads": count})
+        return 0
+
     tables = [
         "leads", "contacts", "lists", "list_leads", "sample_reviews", "list_approvals",
         "campaigns", "campaign_steps", "messages", "message_events", "replies",
@@ -1031,6 +1102,56 @@ def _export(args, db: Database) -> int:
     except OSError:
         pass
     _out(args, {"ok": True, "export": str(destination), "tables": {k: len(v) for k, v in payload["tables"].items()}})
+    return 0
+
+
+def _job(args, config: ReachyConfig, db: Database) -> int:
+    if args.job_command == "discover":
+        from .jobs import run_discovery_job
+
+        queries = list(getattr(args, "queries", []) or [])
+        if getattr(args, "queries_file", None):
+            f_path = Path(args.queries_file).expanduser()
+            if f_path.is_file():
+                for line in f_path.read_text(encoding="utf-8").splitlines():
+                    if line.strip():
+                        queries.append(line.strip())
+        if getattr(args, "queries_str", None):
+            for part in args.queries_str.replace(";", "\n").splitlines():
+                if part.strip():
+                    queries.append(part.strip())
+
+        combined_tags = list(getattr(args, "tags", []) or [])
+        tags_csv = getattr(args, "tags_csv", None)
+        if tags_csv:
+            combined_tags.extend(part.strip() for part in tags_csv.split(",") if part.strip())
+
+        res = run_discovery_job(
+            db=db,
+            config=config,
+            queries=queries,
+            list_name=args.list_name,
+            limit_per_query=args.limit,
+            csv_path=args.csv_path,
+            headed=args.headed,
+            backend=args.backend,
+            enrich=not args.no_enrich,
+            verify=not args.no_verify,
+            tags=combined_tags or None,
+            task_id=getattr(args, "task_id", None),
+            run_id=getattr(args, "run_id", None),
+            clean_temp=not getattr(args, "no_clean", False),
+        )
+        _out(args, res)
+        return 0
+    return 1
+
+
+def _clean(args) -> int:
+    from .jobs import clean_workspace
+
+    removed = clean_workspace(dry_run=args.dry_run)
+    _out(args, {"ok": True, "dry_run": args.dry_run, "removed": removed, "count": len(removed)})
     return 0
 
 

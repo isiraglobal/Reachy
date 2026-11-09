@@ -12,12 +12,39 @@ Reachy is a self-hosted B2B prospecting and outreach application by **ISIRA Auto
 - A published business email is not automatic consent. Policy gates must remain conservative: unknown or failed checks block.
 - Preserve suppression records. Do not delete them to make a campaign pass.
 
+## AI Agent Job Execution Protocol
+
+When asked by the user to perform lead generation, discovery, enrichment, or export tasks:
+
+1. **DO NOT edit codebase files** or modify existing repository source code to perform user jobs.
+2. **DO NOT create scratch Python scripts** (such as `batch_*.py`, `check_*.py`, `import_*.py`, `export_*.py`) in the repository.
+3. **DO NOT create or keep intermediate JSON files** or scratch dumps in the root directory. Intermediate artifacts must be deleted.
+4. **All lead deliverables must be provided in CSV format only**, placed inside the `outputs/` folder (e.g. `outputs/<task_name>.csv`).
+5. **Always use the built-in CLI commands** for execution:
+   - **Multi-query / batch discovery directly to CSV** (automatically deduplicates, imports to database, exports CSV, and cleans temporary files):
+     ```bash
+     python3 -m reachy job discover -q "Query 1" -q "Query 2" --limit 25 --list <list_name> --csv outputs/<filename>.csv
+     ```
+   - **Single discovery directly to CSV**:
+     ```bash
+     python3 -m reachy discover "<query>" --limit 50 --list <list_name> --csv outputs/<filename>.csv
+     ```
+   - **Export existing leads from database to CSV**:
+     ```bash
+     python3 -m reachy leads export --list <list_name> --out outputs/<filename>.csv
+     ```
+   - **Clean stray scratch files and cache**:
+     ```bash
+     python3 -m reachy clean
+     ```
+
 ## Architecture
 
 ```text
 Reachy/
 ├── reachy/                          # Product runtime and CLI
 │   ├── cli.py                       # `reachy` command surface
+│   ├── jobs.py                      # Autonomous lead jobs, batch runner, CSV export
 │   ├── db.py                        # SQLite, migrations, backup/restore, recovery
 │   ├── migrations/001_initial.sql   # Versioned schema
 │   ├── config.py                    # Paths and environment configuration
@@ -79,8 +106,10 @@ Python 3.10+ is required; the repository is tested on Python 3.13.
 reachy init | doctor | pause
 reachy icp create|list
 reachy import --file FILE --source SOURCE --list NAME
-reachy discover "query" --limit N --list NAME [--backend playwright]
+reachy discover "query" --limit N --list NAME [--csv [PATH]] [--backend playwright]
+reachy job discover -q "Q1" -q "Q2" --limit N --list NAME --csv PATH
 reachy leads list [--list NAME] [--limit N]
+reachy leads export [--list NAME] [--out PATH]
 reachy list create|sample|review|approve|show
 reachy copy styles|sample|generate|check-spam
 reachy warmup status [--account ID]
@@ -89,7 +118,7 @@ reachy campaign create|preview|approve|start|plan-batches|run|pause|resume|stop|
 reachy agent send [--campaign ID] [--max N] [--pace SECONDS]
 reachy tracking record-open|stats
 reachy replies sync|list|drafts|approve-draft
-reachy bounce | suppress | health | export | backup | restore | audit | report
+reachy bounce | suppress | health | export | backup | restore | audit | report | clean
 reachy browser check|open
 ```
 
